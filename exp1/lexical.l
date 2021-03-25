@@ -1,3 +1,14 @@
+%{
+    #include"syntax.tab.h"
+
+    int yycolumn = 1;
+    #define YY_USER_ACTION \
+        yylloc.first_line = yylloc.last_line = yylineno; \
+        yylloc.first_column = yycolumn; \
+        yylloc.last_column = yycolumn + yyleng - 1; \
+        yycolumn += yyleng;
+%}
+
 %option yylineno
 
 number [1-9][0-9]*
@@ -31,41 +42,59 @@ STRUCT "struct"
 RETURN "return"
 TYPE "int"|"float"
 %%
-{IF} {printf("IF: %s\n", yytext);}
-{ELSE} {printf("ELSE: %s\n", yytext);}
-{TYPE} {printf("TYPE: %s\n", yytext);}
-{WHILE} {printf("WHILE: %s\n", yytext);}
-{STRUCT} {printf("STRUCT: %s\n", yytext);}
-{RETURN} {printf("RETURN: %s\n", yytext);}
-
-{SEMI} {printf("SEMI: %s\n", yytext);}
-{COMMA} {printf("COMMA: %s\n", yytext);}
-{ASSIGNOP} {printf("ASSIGNOP: %s\n", yytext);}
-{RELOP} {printf("RELOP: %s\n", yytext);}
-{PLUS} {printf("PLUS: %s\n", yytext);}
-{MINUS} {printf("MINUS: %s\n", yytext);}
-{STAR} {printf("STAR: %s\n", yytext);}
-{DIV} {printf("DIV: %s\n", yytext);}
-{AND} {printf("AND: %s\n", yytext);}
-{OR} {printf("OR: %s\n", yytext);}
-{DOT} {printf("DOT: %s\n", yytext);}
-{NOT} {printf("NOT: %s\n", yytext);}
-{LP} {printf("LP: %s\n", yytext);}
-{RP} {printf("RP: %s\n", yytext);}
-{LB} {printf("LB: %s\n", yytext);}
-{RB} {printf("RB: %s\n", yytext);}
-{LC} {printf("LC: %s\n", yytext);}
-{RC} {printf("RC: %s\n", yytext);}
-
 "//" {
     char c = input();
     while(c != '\n') c = input();
 }
 
+{IF} { return IF; }
+{ELSE} { return ELSE; }
+{TYPE} { return TYPE; }
+{WHILE} { return WHILE; }
+{STRUCT} { return STRUCT; }
+{RETURN} { return RETURN; }
+
+{SEMI} { return SEMI; }
+{COMMA} { return COMMA; }
+{ASSIGNOP} { return ASSIGNOP; }
+{RELOP} { return RELOP; }
+{PLUS} { return PLUS; }
+{MINUS} { return MINUS; }
+{STAR} { return STAR; }
+{DIV} { return DIV; }
+{AND} { return AND; }
+{OR} { return OR; }
+{DOT} { return DOT; }
+{NOT} { return NOT; }
+{LP} { return LP; }
+{RP} { return RP; }
+{LB} { return LB; }
+{RB} { return RB; }
+{LC} { return LC; }
+{RC} { return RC; }
+{ID} { yylval = deepCopy(yytext); return ID; }
+{INT} { yylval = atoi(yytext); return INT; }
+{FLOAT} { yylval = atof(yytext); return FLOAT; }
+
+\n { yycolumn = 1;}
+
 . {
     printf("Error type A at Line %d: Mysterious characters \'%s\'\n", yylineno, yytext);
 }
+
 %%
+char* deepCopy(char* text){
+    int length = strlen(text) + 1;
+
+    char* newText = (char*)malloc(sizeof(char)  * length);
+
+    assert(newText != NULL);
+
+    strncpy(newText, text, length);
+
+    return newText;
+}
+
 int main(int argc, char** argv){
     int i;
     if(argc < 2){
