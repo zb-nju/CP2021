@@ -10,6 +10,7 @@
 %}
 
 %option yylineno
+%x comment
 
 number [1-9][0-9]*
 ws [ \t]
@@ -42,10 +43,19 @@ STRUCT "struct"
 RETURN "return"
 TYPE "int"|"float"
 %%
+<*>\n { yycolumn = 1;}
+
 "//" {
     char c = input();
     while(c != '\n') c = input();
 }
+
+"/*" { BEGIN(comment); }
+<comment>[^*] { ; }
+<comment>"*"+[^/]* { ; }
+<comment>"*"+"/" { BEGIN(INITIAL); }
+
+[ \t] { ; }
 
 {IF} { return IF; }
 {ELSE} { return ELSE; }
@@ -76,11 +86,7 @@ TYPE "int"|"float"
 {INT} { yylval = atoi(yytext); return INT; }
 {FLOAT} { yylval = atof(yytext); return FLOAT; }
 
-\n { yycolumn = 1;}
-
-. {
-    printf("Error type A at Line %d: Mysterious characters \'%s\'\n", yylineno, yytext);
-}
+. { printf("Error type A at Line %d: Mysterious characters \'%s\'\n", yylineno, yytext); }
 
 %%
 char* deepCopy(char* text){
@@ -93,23 +99,4 @@ char* deepCopy(char* text){
     strncpy(newText, text, length);
 
     return newText;
-}
-
-int main(int argc, char** argv){
-    int i;
-    if(argc < 2){
-        yylex();
-        return 0;
-    }
-    for(i = 1; i < argc; i++){
-        FILE *f = fopen(argv[i], "r");
-        if(!f){
-            perror(argv[i]);
-            return 1;
-        }
-        yyrestart(f);
-        yylex();
-        fclose(f);
-    }
-    return 0;
 }
