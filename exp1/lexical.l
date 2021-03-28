@@ -1,5 +1,8 @@
 %{
     #include"syntax.tab.h"
+    #include<assert.h>
+
+    char* deepCopy(char* text);
 
     int yycolumn = 1;
     #define YY_USER_ACTION \
@@ -82,9 +85,9 @@ TYPE "int"|"float"
 {RB} { return RB; }
 {LC} { return LC; }
 {RC} { return RC; }
-{ID} { yylval = deepCopy(yytext); return ID; }
-{INT} { yylval = atoi(yytext); return INT; }
-{FLOAT} { yylval = atof(yytext); return FLOAT; }
+{ID} { yylval.type_char_star = deepCopy(yytext); return ID; }
+{INT} { yylval.type_int = atoi(yytext); return INT; }
+{FLOAT} { yylval.type_float = atof(yytext); return FLOAT; }
 
 . { printf("Error type A at Line %d: Mysterious characters \'%s\'\n", yylineno, yytext); }
 

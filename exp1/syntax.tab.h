@@ -48,9 +48,9 @@ extern int yydebug;
     INT = 258,
     FLOAT = 259,
     ID = 260,
-    ADD = 261,
-    SUB = 262,
-    MUL = 263,
+    PLUS = 261,
+    MINUS = 262,
+    STAR = 263,
     DIV = 264,
     DOT = 265,
     SEMI = 266,
@@ -71,7 +71,8 @@ extern int yydebug;
     WHILE = 281,
     STRUCT = 282,
     RETURN = 283,
-    TYPE = 284
+    TYPE = 284,
+    LOWER_THAN_ELSE = 285
   };
 #endif
 
@@ -80,14 +81,14 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 5 "syntax.y" /* yacc.c:1909  */
+#line 9 "syntax.y" /* yacc.c:1909  */
 
     int type_int;
     float type_float;
     double type_double;
     char* type_char_star;
 
-#line 91 "syntax.tab.h" /* yacc.c:1909  */
+#line 92 "syntax.tab.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -95,9 +96,23 @@ typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_DECLARED 1
 #endif
 
+/* Location type.  */
+#if ! defined YYLTYPE && ! defined YYLTYPE_IS_DECLARED
+typedef struct YYLTYPE YYLTYPE;
+struct YYLTYPE
+{
+  int first_line;
+  int first_column;
+  int last_line;
+  int last_column;
+};
+# define YYLTYPE_IS_DECLARED 1
+# define YYLTYPE_IS_TRIVIAL 1
+#endif
+
 
 extern YYSTYPE yylval;
-
+extern YYLTYPE yylloc;
 int yyparse (void);
 
 #endif /* !YY_YY_SYNTAX_TAB_H_INCLUDED  */
