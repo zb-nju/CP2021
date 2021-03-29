@@ -18,8 +18,8 @@
 number [1-9][0-9]*
 ws [ \t]
 
-ID [_a-zA-z][_a-zA-Z0-9]*
-INT [+-]?(({number}([eE][+-]?{number})?)|0)
+ID [_a-zA-Z][_a-zA-Z0-9]*
+INT ([+-]?(({number}([eE][+-]?{number})?)|0))|(0(0|[1-7][0-7]*))|((0x|0X)([1-9A-F][0-9A-F]*))
 FLOAT [+-]?([0-9]*\.?[0-9]+|[0-9]+\.)([eE][+-]?{number})?
 DOT "."
 SEMI ";"

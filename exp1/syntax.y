@@ -43,6 +43,7 @@ ExtDefList : ExtDef ExtDefList
 ExtDef : Specifier ExtDecList SEMI
     | Specifier SEMI
     | Specifier FunDec CompSt
+    | error SEMI
     ;
 ExtDecList : VarDec
     | VarDec COMMA ExtDecList
@@ -64,23 +65,28 @@ Tag : ID
 
 VarDec : ID
     | VarDec LB INT RB
+    | VarDec LB error RB
     ;
 FunDec : ID LP VarList RP
     | ID LP RP
+    | error RP
     ;
 VarList : ParamDec COMMA VarList
     | ParamDec
     ;
 ParamDec : Specifier VarDec
+    | error RP
     ;
 
 
 CompSt : LC DefList StmtList RC
+    | LC error RC
     ;
 StmtList : Stmt StmtList
     | /* empty */
     ;
 Stmt : Exp SEMI
+    | Exp error '\n'
     | CompSt
     | RETURN Exp SEMI
     | IF LP Exp RP Stmt %prec LOWER_THAN_ELSE
@@ -93,6 +99,7 @@ DefList : Def DefList
     | /* empty */
     ;
 Def : Specifier DecList SEMI
+    | error SEMI
     ;
 DecList : Dec
     | Dec COMMA DecList
@@ -111,11 +118,14 @@ Exp : Exp ASSIGNOP Exp
     | Exp STAR Exp
     | Exp DIV Exp
     | LP Exp RP
+    | LP error RP
     | MINUS Exp
     | NOT Exp
     | ID LP Args RP
+    | ID LP error RP
     | ID LP RP
     | Exp LB Exp RB
+    | Exp LB error RB
     | Exp DOT ID
     | ID
     | INT
