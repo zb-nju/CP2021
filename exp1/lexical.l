@@ -19,7 +19,7 @@ number [1-9][0-9]*
 ws [ \t]
 
 ID [_a-zA-Z][_a-zA-Z0-9]*
-INT ([+-]?(({number}([eE][+-]?{number})?)|0))|(0(0|[1-7][0-7]*))|((0x|0X)([1-9A-F][0-9A-F]*))
+INT [+-]?(({number}([eE][+-]?{number})?)|0)
 FLOAT [+-]?([0-9]*\.?[0-9]+|[0-9]+\.)([eE][+-]?{number})?
 DOT "."
 SEMI ";"
@@ -89,7 +89,7 @@ TYPE "int"|"float"
 {INT} { yylval.type_int = atoi(yytext); return INT; }
 {FLOAT} { yylval.type_float = atof(yytext); return FLOAT; }
 
-. { printf("Error type A at Line %d: Mysterious characters \'%s\'\n", yylineno, yytext); }
+
 
 %%
 char* deepCopy(char* text){

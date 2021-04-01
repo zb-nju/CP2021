@@ -3,7 +3,10 @@
 %{
     #include"lex.yy.c"
     #include<stdio.h>
+    void printerror(char* msg);
     void yyerror(char* msg);
+    int errorNum=0;
+    int errorLine=0;
 %}
 
 %union {
@@ -43,7 +46,7 @@ ExtDefList : ExtDef ExtDefList
 ExtDef : Specifier ExtDecList SEMI
     | Specifier SEMI
     | Specifier FunDec CompSt
-    | error SEMI
+    | error SEMI { printError("ExtDef---Syntax error."); }
     ;
 ExtDecList : VarDec
     | VarDec COMMA ExtDecList
@@ -65,33 +68,36 @@ Tag : ID
 
 VarDec : ID
     | VarDec LB INT RB
-    | VarDec LB error RB
+    | VarDec LB error RB { printError("Missing \"]\"."); }
     ;
 FunDec : ID LP VarList RP
     | ID LP RP
-    | error RP
+    | error RP { printError("FunDec---Syntax error."); }
     ;
 VarList : ParamDec COMMA VarList
     | ParamDec
     ;
 ParamDec : Specifier VarDec
-    | error RP
+    | error COMMA { printError("Formal parameter definition error."); }
+    | error RP { printError("Formal parameter definition error."); }
     ;
 
 
 CompSt : LC DefList StmtList RC
-    | LC error RC
+    | LC error RC { printError("CompSt---Syntax error."); }
     ;
 StmtList : Stmt StmtList
     | /* empty */
     ;
 Stmt : Exp SEMI
-    | Exp error '\n'
+    //| error '\n' { printError("Stmt---Syntax error."); }
     | CompSt
     | RETURN Exp SEMI
     | IF LP Exp RP Stmt %prec LOWER_THAN_ELSE
     | IF LP Exp RP Stmt ELSE Stmt
+    | IF LP Exp RP error ELSE Stmt { printError("Missing \";\"."); }
     | WHILE LP Exp RP Stmt
+    //| error SEMI { printError("Stmt---Syntax error."); }
     ;
 
 
@@ -99,7 +105,7 @@ DefList : Def DefList
     | /* empty */
     ;
 Def : Specifier DecList SEMI
-    | error SEMI
+    | error SEMI { printError("Def---Syntax error."); }
     ;
 DecList : Dec
     | Dec COMMA DecList
@@ -118,14 +124,14 @@ Exp : Exp ASSIGNOP Exp
     | Exp STAR Exp
     | Exp DIV Exp
     | LP Exp RP
-    | LP error RP
+    | LP error RP { printError("Exp1---Syntax error."); }
     | MINUS Exp
     | NOT Exp
     | ID LP Args RP
-    | ID LP error RP
+    | ID LP error RP { printError("Exp2---Syntax error."); }
     | ID LP RP
     | Exp LB Exp RB
-    | Exp LB error RB
+    | Exp LB error RB { printError("Missing \"]\"."); }
     | Exp DOT ID
     | ID
     | INT
@@ -141,6 +147,18 @@ Args : Exp COMMA Args
 
 %%
 
+void printError(char* msg){
+    errorNum++;
+    if(errorLine!=yylineno){
+        errorLine=yylineno;
+        fprintf(stderr, "Error type B at Line %d: %s\n", yylineno, msg);
+    }
+}
+
 void yyerror(char* msg){
-    fprintf(stderr, "error: %s\n", msg);
+    /*errorNum++;
+    if(errorLine!=yylineno){
+        errorLine=yylineno;
+        fprintf(stderr, "Error type B at Line %d: %s\n", yylineno, msg);
+    }*/
 }
