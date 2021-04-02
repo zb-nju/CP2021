@@ -1,24 +1,5 @@
-#ifndef _NODE_H_
-#define _NODE_H_
-
-#include"stdio.h"
-#include"stdlib.h"
-#include"string.h"
-#include"assert.h"
-#include"stdarg.h"
-
-#define true 1
-#define false 0
-
-typedef struct node_{
-    char *name;
-    char *val;
-    int isToken;
-    int lineNum;
-
-    struct node_* firstChild;
-    struct node_* nextBrother;
-}node;
+#include <stdio.h>
+#include "node.h"
 
 node* createNode(int lineNum, char* name, char* val, int isToken,  int childNum, ...){
     node* newNode = (node*)malloc(sizeof(node));
@@ -76,5 +57,3 @@ void printTree(node* root, int depth){
     printTree(root->firstChild, depth + 1);
     printTree(root->nextBrother, depth);
 }
-
-#endif

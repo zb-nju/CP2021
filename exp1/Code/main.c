@@ -6,9 +6,10 @@
 extern void yyrestart(FILE *);
 extern int yyparse();
 
-extern int errorNums;
 extern node* root;
 //extern int yydebug;
+
+extern int errorNums;
 
 int main(int argc, char** argv) {
 	if(argc <= 1) return 1;

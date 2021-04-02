@@ -4,6 +4,7 @@
     #include<assert.h>
 
     char* deepCopy(char* text);
+    extern int errorNums;
 
     int yycolumn = 1;
     #define YY_USER_ACTION \
@@ -17,7 +18,7 @@
 %x comment
 
 number [1-9][0-9]*
-ws [ \t]
+ws [ \t\n\r]+
 
 ID [_a-zA-Z][_a-zA-Z0-9]*
 INT [+-]?(({number}([eE][+-]?{number})?)|0)
@@ -47,7 +48,6 @@ STRUCT "struct"
 RETURN "return"
 TYPE "int"|"float"
 %%
-<*>\n { yycolumn = 1;}
 
 "//" {
     char c = input();
@@ -60,7 +60,6 @@ TYPE "int"|"float"
 <comment>"*"+[^/]*
 <comment>"*"+"/" { BEGIN(INITIAL); }
 
-[ \t] { ; }
 
 {IF} { yylval.pnode = createNode(yylineno, "IF", yytext, true, 0); return IF; }
 {ELSE} { yylval.pnode = createNode(yylineno, "ELSE", yytext, true, 0); return ELSE; }
@@ -91,7 +90,10 @@ TYPE "int"|"float"
 {INT} { yylval.pnode = createNode(yylineno, "INT", yytext, true, 0);  return INT; }
 {FLOAT} { yylval.pnode = createNode(yylineno, "FLOAT", yytext, true, 0);  return FLOAT; }
 
-. { printf("Error type A at Line %d: Mysterious characters \'%s\'\n", yylineno, yytext); }
+\n { yycolumn = 1;}
+{ws} {}
+
+. { errorNums++; printf("Error type A at Line %d: Mysterious characters \'%s\'\n", yylineno, yytext); }
 
 %%
 char* deepCopy(char* text){
