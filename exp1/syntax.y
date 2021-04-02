@@ -46,7 +46,7 @@ ExtDefList : ExtDef ExtDefList
 ExtDef : Specifier ExtDecList SEMI
     | Specifier SEMI
     | Specifier FunDec CompSt
-    | error SEMI { printError("ExtDef---Syntax error."); }
+    | error SEMI { printError("Syntax error."); }
     ;
 ExtDecList : VarDec
     | VarDec COMMA ExtDecList
@@ -72,7 +72,7 @@ VarDec : ID
     ;
 FunDec : ID LP VarList RP
     | ID LP RP
-    | error RP { printError("FunDec---Syntax error."); }
+    | error RP { printError("Syntax error."); }
     ;
 VarList : ParamDec COMMA VarList
     | ParamDec
@@ -84,20 +84,21 @@ ParamDec : Specifier VarDec
 
 
 CompSt : LC DefList StmtList RC
-    | LC error RC { printError("CompSt---Syntax error."); }
+    | LC error RC { printError("Syntax error."); }
     ;
 StmtList : Stmt StmtList
     | /* empty */
     ;
 Stmt : Exp SEMI
-    //| error '\n' { printError("Stmt---Syntax error."); }
+    //| STAR DIV { printError("Syntax error."); }
+    //| error '\n' { printError("Syntax error."); }
     | CompSt
     | RETURN Exp SEMI
     | IF LP Exp RP Stmt %prec LOWER_THAN_ELSE
     | IF LP Exp RP Stmt ELSE Stmt
     | IF LP Exp RP error ELSE Stmt { printError("Missing \";\"."); }
     | WHILE LP Exp RP Stmt
-    //| error SEMI { printError("Stmt---Syntax error."); }
+    //| error SEMI { printError("Syntax error."); }
     ;
 
 
@@ -105,7 +106,8 @@ DefList : Def DefList
     | /* empty */
     ;
 Def : Specifier DecList SEMI
-    | error SEMI { printError("Def---Syntax error."); }
+    | STAR DIV { printError("Syntax error."); }
+    | error SEMI { printError("Syntax error."); }
     ;
 DecList : Dec
     | Dec COMMA DecList
@@ -124,11 +126,11 @@ Exp : Exp ASSIGNOP Exp
     | Exp STAR Exp
     | Exp DIV Exp
     | LP Exp RP
-    | LP error RP { printError("Exp1---Syntax error."); }
+    | LP error RP { printError("Syntax error."); }
     | MINUS Exp
     | NOT Exp
     | ID LP Args RP
-    | ID LP error RP { printError("Exp2---Syntax error."); }
+    | ID LP error RP { printError("Syntax error."); }
     | ID LP RP
     | Exp LB Exp RB
     | Exp LB error RB { printError("Missing \"]\"."); }
@@ -140,8 +142,6 @@ Exp : Exp ASSIGNOP Exp
 Args : Exp COMMA Args
     | Exp
     ;
-
-
 
 
 

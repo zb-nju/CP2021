@@ -54,8 +54,9 @@ TYPE "int"|"float"
 }
 
 "/*" { BEGIN(comment); }
-<comment>[^*] { ; }
-<comment>"*"+[^/]* { ; }
+<comment>[^*] 
+<comment>"/"+"*" 
+<comment>"*"+[^/]* 
 <comment>"*"+"/" { BEGIN(INITIAL); }
 
 [ \t] { ; }
@@ -89,7 +90,7 @@ TYPE "int"|"float"
 {INT} { yylval.type_int = atoi(yytext); return INT; }
 {FLOAT} { yylval.type_float = atof(yytext); return FLOAT; }
 
-
+. { printf("Error type A at Line %d: Mysterious characters \'%s\'\n", yylineno, yytext); }
 
 %%
 char* deepCopy(char* text){
