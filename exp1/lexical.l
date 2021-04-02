@@ -55,8 +55,9 @@ TYPE "int"|"float"
 }
 
 "/*" { BEGIN(comment); }
-<comment>[^*] { ; }
-<comment>"*"+[^/]* { ; }
+<comment>[^*] 
+<comment>"/"+"*" 
+<comment>"*"+[^/]* 
 <comment>"*"+"/" { BEGIN(INITIAL); }
 
 [ \t] { ; }
@@ -89,6 +90,8 @@ TYPE "int"|"float"
 {ID} { yylval.pnode = createNode(yylineno, "ID", yytext, true, 0);  return ID; }
 {INT} { yylval.pnode = createNode(yylineno, "INT", yytext, true, 0);  return INT; }
 {FLOAT} { yylval.pnode = createNode(yylineno, "FLOAT", yytext, true, 0);  return FLOAT; }
+
+. { printf("Error type A at Line %d: Mysterious characters \'%s\'\n", yylineno, yytext); }
 
 %%
 char* deepCopy(char* text){

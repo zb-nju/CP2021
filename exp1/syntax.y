@@ -51,7 +51,7 @@ ExtDefList : ExtDef ExtDefList                  { $$ = createNode(@$.first_line,
 ExtDef : Specifier ExtDecList SEMI              { $$ = createNode(@$.first_line, "ExtDef", "", false, 3, $1, $2, $3); }
     | Specifier SEMI                            { $$ = createNode(@$.first_line, "ExtDef", "", false, 2, $1, $2); }
     | Specifier FunDec CompSt                   { $$ = createNode(@$.first_line, "ExtDef", "", false, 3, $1, $2, $3); }
-    | error SEMI                                { printError("ExtDef---Syntax error."); }
+    | error SEMI                                { printError("Syntax error."); }
     ;
 ExtDecList : VarDec                             { $$ = createNode(@$.first_line, "ExtDecList", "", false, 1, $1); }
     | VarDec COMMA ExtDecList                   { $$ = createNode(@$.first_line, "ExtDecList", "", false, 3, $1, $2, $3); }
@@ -77,7 +77,7 @@ VarDec : ID                                     { $$ = createNode(@$.first_line,
     ;
 FunDec : ID LP VarList RP                       { $$ = createNode(@$.first_line, "FunDec", "", false, 4, $1, $2, $3, $4); }
     | ID LP RP                                  { $$ = createNode(@$.first_line, "FunDec", "", false, 3, $1, $2, $3); }
-    | error RP                                  { printError("FunDec---Syntax error."); }
+    | error RP                                  { printError("Syntax error."); }
     ;
 VarList : ParamDec COMMA VarList                { $$ = createNode(@$.first_line, "VarList", "", false, 3, $1, $2, $3); }
     | ParamDec                                  { $$ = createNode(@$.first_line, "VarList", "", false, 1, $1); }
@@ -89,7 +89,7 @@ ParamDec : Specifier VarDec                     { $$ = createNode(@$.first_line,
 
 
 CompSt : LC DefList StmtList RC                 { $$ = createNode(@$.first_line, "CompSt", "", false, 4, $1, $2, $3, $4); }
-    | LC error RC                               { printError("CompSt---Syntax error."); }
+    | LC error RC                               { printError("Syntax error."); }
     ;
 StmtList : Stmt StmtList                        { $$ = createNode(@$.first_line, "StmtList", "", false, 2, $1, $2); }
     | /* empty */                               { $$ = NULL; }
@@ -110,7 +110,8 @@ DefList : Def DefList                           { $$ = createNode(@$.first_line,
     | /* empty */                               { $$ = NULL; }
     ;
 Def : Specifier DecList SEMI                    { $$ = createNode(@$.first_line, "Def", "", false, 3, $1, $2, $3); }
-    | error SEMI                                { printError("Def---Syntax error."); }
+    | STAR DIV                                  { printError("Syntax error."); }
+    | error SEMI                                { printError("Syntax error."); }
     ;
 DecList : Dec                                   { $$ = createNode(@$.first_line, "DecList", "", false, 1, $1); }
     | Dec COMMA DecList                         { $$ = createNode(@$.first_line, "DecList", "", false, 3, $1, $2, $3); }
@@ -129,11 +130,11 @@ Exp : Exp ASSIGNOP Exp                          { $$ = createNode(@$.first_line,
     | Exp STAR Exp                              { $$ = createNode(@$.first_line, "Exp", "", false, 3, $1, $2, $3); }
     | Exp DIV Exp                               { $$ = createNode(@$.first_line, "Exp", "", false, 3, $1, $2, $3); }
     | LP Exp RP                                 { $$ = createNode(@$.first_line, "Exp", "", false, 3, $1, $2, $3); }
-    | LP error RP                               { printError("Exp1---Syntax error."); }
+    | LP error RP                               { printError("Syntax error."); }
     | MINUS Exp                                 { $$ = createNode(@$.first_line, "Exp", "", false, 2, $1, $2); }
     | NOT Exp                                   { $$ = createNode(@$.first_line, "Exp", "", false, 2, $1, $2); }
     | ID LP Args RP                             { $$ = createNode(@$.first_line, "Exp", "", false, 4, $1, $2, $3, $4); }
-    | ID LP error RP                            { printError("Exp2---Syntax error."); }
+    | ID LP error RP                            { printError("Syntax error."); }
     | ID LP RP                                  { $$ = createNode(@$.first_line, "Exp", "", false, 3, $1, $2, $3); }
     | Exp LB Exp RB                             { $$ = createNode(@$.first_line, "Exp", "", false, 4, $1, $2, $3, $4); }
     | Exp LB error RB                           { printError("Missing \"]\"."); }
