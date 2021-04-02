@@ -55,9 +55,9 @@ TYPE "int"|"float"
 }
 
 "/*" { BEGIN(comment); }
-<comment>[^*] 
-<comment>"/"+"*" 
-<comment>"*"+[^/]* 
+<comment>[^*]
+<comment>"/"+"*"
+<comment>"*"+[^/]*
 <comment>"*"+"/" { BEGIN(INITIAL); }
 
 [ \t] { ; }
