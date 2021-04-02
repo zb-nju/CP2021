@@ -22,7 +22,6 @@ int main(int argc, char** argv) {
 	//yydebug=1;
 	yyparse();
 
-	printf("errorNum = %d\n", errorNums);
 	if(errorNums==0){ //No errors
 		printTree(root, 0);
 	}
