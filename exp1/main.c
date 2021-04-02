@@ -6,9 +6,10 @@
 extern void yyrestart(FILE *);
 extern int yyparse();
 
-extern int errorNums;
 extern node* root;
 //extern int yydebug;
+
+extern int errorNums;
 
 int main(int argc, char** argv) {
 	if(argc <= 1) return 1;
@@ -21,6 +22,7 @@ int main(int argc, char** argv) {
 	//yydebug=1;
 	yyparse();
 
+	printf("errorNum = %d\n", errorNums);
 	if(errorNums==0){ //No errors
 		printTree(root, 0);
 	}

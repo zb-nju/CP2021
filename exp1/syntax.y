@@ -4,10 +4,8 @@
     #include"lex.yy.c"
     #include"node.h"
     #include<stdio.h>
-    void printerror(char* msg);
     void yyerror(char* msg);
-    extern node* createNode(int lineNum, char* name, char* val, int isToken,  int childNum, ...);
-    int errorNum=0;
+    int errorNums=0;
     int errorLine=0;
     node* root;
 %}
@@ -51,7 +49,7 @@ ExtDefList : ExtDef ExtDefList                  { $$ = createNode(@$.first_line,
 ExtDef : Specifier ExtDecList SEMI              { $$ = createNode(@$.first_line, "ExtDef", "", false, 3, $1, $2, $3); }
     | Specifier SEMI                            { $$ = createNode(@$.first_line, "ExtDef", "", false, 2, $1, $2); }
     | Specifier FunDec CompSt                   { $$ = createNode(@$.first_line, "ExtDef", "", false, 3, $1, $2, $3); }
-    | error SEMI                                { printError("Syntax error."); }
+    | error SEMI                                { errorNums++; printf("Error type B at Line %d: Syntax error.\n", yylineno); }
     ;
 ExtDecList : VarDec                             { $$ = createNode(@$.first_line, "ExtDecList", "", false, 1, $1); }
     | VarDec COMMA ExtDecList                   { $$ = createNode(@$.first_line, "ExtDecList", "", false, 3, $1, $2, $3); }
@@ -73,36 +71,36 @@ Tag : ID                                        { $$ = createNode(@$.first_line,
 
 VarDec : ID                                     { $$ = createNode(@$.first_line, "VarDec", "", false, 1, $1); }
     | VarDec LB INT RB                          { $$ = createNode(@$.first_line, "VarDec", "", false, 4, $1, $2, $3, $4); }
-    | VarDec LB error RB                        { printError("Missing \"]\"."); }
+    | VarDec LB error RB                        { errorNums++; printf("Error type B at Line %d: Missing ']'.\n", yylineno); }
     ;
 FunDec : ID LP VarList RP                       { $$ = createNode(@$.first_line, "FunDec", "", false, 4, $1, $2, $3, $4); }
     | ID LP RP                                  { $$ = createNode(@$.first_line, "FunDec", "", false, 3, $1, $2, $3); }
-    | error RP                                  { printError("Syntax error."); }
+    | error RP                                  { errorNums++; printf("Error type B at Line %d: Syntax error.\n", yylineno); }
     ;
 VarList : ParamDec COMMA VarList                { $$ = createNode(@$.first_line, "VarList", "", false, 3, $1, $2, $3); }
     | ParamDec                                  { $$ = createNode(@$.first_line, "VarList", "", false, 1, $1); }
     ;
 ParamDec : Specifier VarDec                     { $$ = createNode(@$.first_line, "ParamDec", "", false, 2, $1, $2); }
-    | error COMMA                               { printError("Formal parameter definition error."); }
-    | error RP                                  { printError("Formal parameter definition error."); }
+    | error COMMA                               { errorNums++; printf("Error type B at Line %d: Formal parameter definition error.\n", yylineno); }
+    | error RP                                  { errorNums++; printf("Error type B at Line %d: Formal parameter definition error.\n", yylineno); }
     ;
 
 
 CompSt : LC DefList StmtList RC                 { $$ = createNode(@$.first_line, "CompSt", "", false, 4, $1, $2, $3, $4); }
-    | LC error RC                               { printError("Syntax error."); }
+    | LC error RC                               { errorNums++; printf("Error type B at Line %d: Syntax error.\n", yylineno); }
     ;
 StmtList : Stmt StmtList                        { $$ = createNode(@$.first_line, "StmtList", "", false, 2, $1, $2); }
     | /* empty */                               { $$ = NULL; }
     ;
 Stmt : Exp SEMI                                 { $$ = createNode(@$.first_line, "Stmt", "", false, 2, $1, $2); }
-    //| error '\n'                              { printError("Stmt---Syntax error."); }
+    //| error '\n'                              { errorNums++; printf("Error type B at Line %d: Syntax error.\n", yylineno); }
     | CompSt                                    { $$ = createNode(@$.first_line, "Stmt", "", false, 1, $1); }
     | RETURN Exp SEMI                           { $$ = createNode(@$.first_line, "Stmt", "", false, 3, $1, $2, $3); }
     | IF LP Exp RP Stmt %prec LOWER_THAN_ELSE   { $$ = createNode(@$.first_line, "Stmt", "", false, 5, $1, $2, $3, $4, $5); }
     | IF LP Exp RP Stmt ELSE Stmt               { $$ = createNode(@$.first_line, "Stmt", "", false, 7, $1, $2, $3, $4, $5, $6, $7); }
-    | IF LP Exp RP error ELSE Stmt              { printError("Missing \";\"."); }
+    | IF LP Exp RP error ELSE Stmt              { errorNums++; printf("Error type B at Line %d: Missing ';'.\n", yylineno); }
     | WHILE LP Exp RP Stmt                      { $$ = createNode(@$.first_line, "Stmt", "", false, 5, $1, $2, $3, $4, $5); }
-    //| error SEMI                              { printError("Stmt---Syntax error."); }
+    //| error SEMI                              { errorNums++; printf("Error type B at Line %d: Syntax error.\n", yylineno); }
     ;
 
 
@@ -110,8 +108,8 @@ DefList : Def DefList                           { $$ = createNode(@$.first_line,
     | /* empty */                               { $$ = NULL; }
     ;
 Def : Specifier DecList SEMI                    { $$ = createNode(@$.first_line, "Def", "", false, 3, $1, $2, $3); }
-    | STAR DIV                                  { printError("Syntax error."); }
-    | error SEMI                                { printError("Syntax error."); }
+    | STAR DIV                                  { errorNums++; printf("Error type B at Line %d: Syntax error.\n", yylineno); }
+    | error SEMI                                { errorNums++; printf("Error type B at Line %d: Syntax error.\n", yylineno); }
     ;
 DecList : Dec                                   { $$ = createNode(@$.first_line, "DecList", "", false, 1, $1); }
     | Dec COMMA DecList                         { $$ = createNode(@$.first_line, "DecList", "", false, 3, $1, $2, $3); }
@@ -130,14 +128,14 @@ Exp : Exp ASSIGNOP Exp                          { $$ = createNode(@$.first_line,
     | Exp STAR Exp                              { $$ = createNode(@$.first_line, "Exp", "", false, 3, $1, $2, $3); }
     | Exp DIV Exp                               { $$ = createNode(@$.first_line, "Exp", "", false, 3, $1, $2, $3); }
     | LP Exp RP                                 { $$ = createNode(@$.first_line, "Exp", "", false, 3, $1, $2, $3); }
-    | LP error RP                               { printError("Syntax error."); }
+    | LP error RP                               { errorNums++; printf("Error type B at Line %d: Syntax error.\n", yylineno); }
     | MINUS Exp                                 { $$ = createNode(@$.first_line, "Exp", "", false, 2, $1, $2); }
     | NOT Exp                                   { $$ = createNode(@$.first_line, "Exp", "", false, 2, $1, $2); }
     | ID LP Args RP                             { $$ = createNode(@$.first_line, "Exp", "", false, 4, $1, $2, $3, $4); }
-    | ID LP error RP                            { printError("Syntax error."); }
+    | ID LP error RP                            { errorNums++; printf("Error type B at Line %d: Syntax error.\n", yylineno); }
     | ID LP RP                                  { $$ = createNode(@$.first_line, "Exp", "", false, 3, $1, $2, $3); }
     | Exp LB Exp RB                             { $$ = createNode(@$.first_line, "Exp", "", false, 4, $1, $2, $3, $4); }
-    | Exp LB error RB                           { printError("Missing \"]\"."); }
+    | Exp LB error RB                           { errorNums++; printf("Error type B at Line %d: Missing ']'.\n", yylineno); }
     | Exp DOT ID                                { $$ = createNode(@$.first_line, "Exp", "", false, 3, $1, $2, $3); }
     | ID                                        { $$ = createNode(@$.first_line, "Exp", "", false, 1, $1); }
     | INT                                       { $$ = createNode(@$.first_line, "Exp", "", false, 1, $1); }
@@ -149,16 +147,8 @@ Args : Exp COMMA Args                           { $$ = createNode(@$.first_line,
 
 %%
 
-void printError(char* msg){
-    errorNum++;
-    if(errorLine!=yylineno){
-        errorLine=yylineno;
-        fprintf(stderr, "Error type B at Line %d: %s\n", yylineno, msg);
-    }
-}
-
 void yyerror(char* msg){
-    /*errorNum++;
+    /*errorNums++;
     if(errorLine!=yylineno){
         errorLine=yylineno;
         fprintf(stderr, "Error type B at Line %d: %s\n", yylineno, msg);
