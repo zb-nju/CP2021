@@ -1,9 +1,13 @@
 //Generate parser
 #include<stdio.h>
+#include"node.h"
+#include"syntax.tab.h"
+
 extern void yyrestart(FILE *);
 extern int yyparse();
 
 extern int errorNums;
+extern node* root;
 //extern int yydebug;
 
 int main(int argc, char** argv) {
@@ -17,9 +21,9 @@ int main(int argc, char** argv) {
 	//yydebug=1;
 	yyparse();
 
-	/*if(errorNums==0){ //No errors
-		printTree();
-	}*/
+	if(errorNums==0){ //No errors
+		printTree(root, 0);
+	}
 	return 0;
 }
 
