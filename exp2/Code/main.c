@@ -2,6 +2,7 @@
 #include<stdio.h>
 #include"Node.h"
 #include"syntax.tab.h"
+#include"Semantic.h"
 
 extern void yyrestart(FILE *);
 extern int yyparse();
@@ -22,9 +23,11 @@ int main(int argc, char** argv) {
 	//yydebug=1;
 	yyparse();
 
-	if(errorNums==0){ //No errors
-		printTree(root, 0);
-	}
+	Program(root);
+
+	// if(errorNums==0){ //No errors
+	// 	printTree(root, 0);
+	// }
 	return 0;
 }
 
