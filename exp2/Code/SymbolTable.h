@@ -1,6 +1,6 @@
 #ifndef _HASH_TABLE_H_
 #define _HASH_TABLE_H_
-#include"DataStruct.h";
+#include"DataStruct.h"
 
 TableNode SymbolTable[HASH_TABLE_SIZE];
 

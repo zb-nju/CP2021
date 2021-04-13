@@ -2,6 +2,6 @@
 #define _TYPE_H_
 #include"DataStruct.h"
 
-Type createType()
+Type createType();
 
 #endif

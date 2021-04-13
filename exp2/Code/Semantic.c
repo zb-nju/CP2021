@@ -18,10 +18,10 @@ void ExtDef(Node root){
     //   | Specifier FunDec CompSt
     Type specifier = Specifier(root->firstChild);
     Node secondChild = root->firstChild->nextBrother;
-    if (strcmp(secondChild->name, "ExtDecList") == 0){
+    if (secondChild->name == Node_ExtDecList){
         ExtDecList(secondChild->nextBrother, specifier);
     }
-    else if (strcmp(secondChild->name, "FunDec") == 0){
+    else if (secondChild->name == Node_FunDec){
         FunDec(secondChild->nextBrother, specifier);
         FunDec(secondChild->nextBrother->nextBrother, specifier);
     }
@@ -44,7 +44,7 @@ void ExtDecList(Node root, Type specifier){
 //Specifiers
 Type Specifier(Node root){
     Node child = root->firstChild;
-    if(strcmp(child->name, "TYPE") == 0){
+    if(child->name == Node_TYPE){
         
     }
 }

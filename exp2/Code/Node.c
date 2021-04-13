@@ -1,20 +1,18 @@
 #include <stdio.h>
 #include "Node.h"
 
-Node createNode(int lineNum, char* name, char* val, int isToken,  int childNum, ...){
+Node createNode(int lineNum, NodeName name, char* val, int isToken,  int childNum, ...){
     Node newNode = (Node)malloc(sizeof(struct Node_));
     assert(newNode != NULL);
 
     newNode->lineNum = lineNum;
-    int nameLen = strlen(name) + 1, valLen = strlen(val) + 1;
+    int valLen = strlen(val) + 1;
 
-    newNode->name = (char*)malloc(sizeof(char) * nameLen);
     newNode->val = (char*)malloc(sizeof(char) * valLen);
-    assert(newNode->name != NULL);
     assert(newNode->val != NULL);
-
-    strncpy(newNode->name, name, nameLen);
     strncpy(newNode->val, val, valLen);
+
+    newNode->name = name;
 
     newNode->isToken == isToken;
 
@@ -44,13 +42,13 @@ void printTree(Node root, int depth){
 
     for(int i = 0; i < depth; i++)
         printf("  ");
-    printf("%s", root->name);
+    printf("%s", NodeNameToString(root->name));
 
     if(root->isToken == false)
         printf("(%d)", root->lineNum);
-    else if(strcmp(root->name, "TYPE") == 0 || strcmp(root->name, "ID") || strcmp(root->name, "INT"))
+    else if(root->name == Node_TYPE || root->name == Node_ID || root->name == Node_INT)
         printf(": %s", root->val);
-    else if(strcmp(root->name, "FLOAT") == 0)
+    else if(root->name == Node_FLOAT)
         printf(": %lf", atof(root->val));
 
     printf("\n");
