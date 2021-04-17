@@ -9,9 +9,6 @@
 
 #include"MyEnum.h"
 
-#define true 1
-#define false 0
-
 typedef struct Node_* Node;
 
 typedef struct Node_{
@@ -24,7 +21,7 @@ typedef struct Node_{
     Node nextBrother;
 };
 
-Node createNode(int lineNum, NodeName name, char* val, int isToken,  int childNum, ...);
+Node createNode(int lineNum, NodeName name, char* val, Boolean isToken,  int childNum, ...);
 
 void printTree(Node root, int depth);
 

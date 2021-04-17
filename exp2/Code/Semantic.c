@@ -32,9 +32,7 @@ void ExtDecList(Node root, Type specifier){
     //ExtDecList → VarDec
     //   | VarDec COMMA ExtDecList
     TableNode tableNode = VarDec(root->firstChild, specifier);
-    if (checkConflict(tableNode) == false)
-        insert(tableNode);
-    else{
+    if (insert(tableNode) == false){
         //TODO: solute conflict
     }
     if (root->firstChild->nextBrother != NULL)
@@ -45,10 +43,18 @@ void ExtDecList(Node root, Type specifier){
 Type Specifier(Node root){
     Node child = root->firstChild;
     if(child->name == Node_TYPE){
-        
-    }
+        Type type = (Type)malloc(sizeof(struct Type_));
+        type->kind = BASIC;
+        if(strcmp(child->firstChild->val, "int") == 0)
+            type->u.basic = Type_INT;
+        else
+            type->u.basic = Type_FLOAT;
+        return type;
+    }else
+        return StructSpecifier(child);
 }
-void StuctSpecifier(Node root){
+Type StuctSpecifier(Node root){
+    
 }
 void OptTag(Node root){
 }

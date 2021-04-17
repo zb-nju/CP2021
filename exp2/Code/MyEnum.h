@@ -1,6 +1,11 @@
 #ifndef _MY_ENUM_H_
 #define _MY_ENUM_H_
 
+typedef enum{
+    true = 1,
+    false = 0
+}Boolean;
+
 typedef enum NodeType_{
     Node_Program = 1,
     Node_ExtDefList,

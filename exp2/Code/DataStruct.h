@@ -10,7 +10,7 @@ struct Type_
 {
     enum { BASIC, ARRAY, STRUCTURE, FUNCTION} kind;
     union{
-        int basic;
+        enum { Type_INT, Type_FLOAT } basic;
 
         struct { Type elem; int size; } array;
 
