@@ -11,10 +11,12 @@ unsigned hash(char* forHash);
 
 // #define true 1
 // #define false 0
-Boolean insert(TableNode tableNode);
+Boolean insertIntoSymbolTable(TableNode tableNode);
 //检查是否存在符号冲突
-Boolean checkByTableNode(TableNode tableNode);
+Boolean checkSymbolByTableNode(TableNode tableNode);
 //根据名字检查符号是否存在于符号表中
-Boolean checkByName(char* name);
+Boolean checkSymbolByName(const char* const name);
+
+TableNode getTableNode(const char* const name);
 
 #endif

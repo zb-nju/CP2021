@@ -7,16 +7,16 @@ void initSymbolTable(){
     }
 }
 
-unsigned hash(char* forHash){
+unsigned hash(const char* const forHash){
     unsigned hash = 1315423911;
-    for(;*forHash; forHash++){
-        hash ^= ((hash << 5) + *forHash + (hash >> 2));
+    for(int i = 0; forHash[i] != '\0'; i++){
+        hash ^= ((hash << 5) + forHash[i] + (hash >> 2));
         hash %= HASH_TABLE_SIZE;
     }
     return hash;
 }
 
-Boolean insert(TableNode tableNode){
+Boolean insertIntoSymbolTable(TableNode tableNode){
     char* name = tableNode->name;
     int hashVal = hash(name);
     TableNode tNode = SymbolTable[hashVal], pre = NULL;
@@ -33,11 +33,11 @@ Boolean insert(TableNode tableNode){
     return true;
 }
 
-Boolean checkByTableNode(TableNode tableNode){
+Boolean checkSymbolByTableNode(TableNode tableNode){
     return checkByName(tableNode->name);
 }
 
-Boolean checkByName(char* name){
+Boolean checkSymbolByName(const char* const name){
     int hashVal = hash(name);
     TableNode tNode = SymbolTable[hashVal];
     while(tNode != NULL){
@@ -46,4 +46,15 @@ Boolean checkByName(char* name){
         tNode = tNode->next;
     }
     return false;
+}
+
+TableNode getTableNode(const char* const name){
+    int hashVal = hash(name);
+    TableNode tNode = SymbolTable[hashVal];
+    while(tNode != NULL){
+        if(strcmp(name, tNode->name) == 0)
+            return tNode;
+        tNode = tNode->next;
+    }
+    return NULL;
 }

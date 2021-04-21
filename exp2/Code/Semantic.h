@@ -1,11 +1,6 @@
 #ifndef _SEMANTIC_H_
 #define _SEMANTIC_H_
 
-#include"Node.h"
-#include"DataStruct.h"
-#include"SymbolTable.h"
-
-
 //暂时将返回值设置为 void，后续实现时按需删改
 //High-level Definitions
 void Program(Node root);

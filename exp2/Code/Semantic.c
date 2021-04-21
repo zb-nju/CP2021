@@ -1,7 +1,14 @@
 #include "Semantic.h"
+#include "Node.h"
+#include "DataStruct.h"
+#include "SymbolTable.h"
+#include "MyEnum.h"
+#include "Help.h"
+#include <string.h>
 
 //High-level Definitions
 void Program(Node root){
+    initSymbolTable();
     ExtDefList(root->firstChild);
 }
 void ExtDefList(Node root){
@@ -23,7 +30,7 @@ void ExtDef(Node root){
     }
     else if (secondChild->name == Node_FunDec){
         FunDec(secondChild->nextBrother, specifier);
-        FunDec(secondChild->nextBrother->nextBrother, specifier);
+        CompSt(secondChild->nextBrother->nextBrother, specifier);
     }
     else{
     }
@@ -54,17 +61,78 @@ Type Specifier(Node root){
         return StructSpecifier(child);
 }
 Type StuctSpecifier(Node root){
-    
+    //StructSpecifier → STRUCT OptTag LC DefList RC
+    //    | STRUCT Tag
+    Node secondChild = root->firstChild->nextBrother;
+    Type retType;
+    if(secondChild == NULL || secondChild->name == Node_OptTag){
+        //建立一个新的符号表节点，并将该节点插入符号表
+
+        if(secondChild != NULL && checkSymbolByName(OptTag(secondChild))){
+            //TODO: 错误16，实验选做2-3要求根据结构判断是否相同，此处重新做判断
+        }
+
+        TableNode newNode = (TableNode)malloc(sizeof(struct TableNode_));
+        if(secondChild != NULL)
+            strcpy(newNode->name, OptTag(secondChild));
+        Type newType = (Type)malloc(sizeof(struct Type_));
+
+        newType->kind = STRUCTURE;
+        newType->u.structure = DefList(secondChild->nextBrother->nextBrother);
+        newNode->type = newType;
+
+        newNode->next = NULL;
+
+        insertIntoSymbolTable(newNode);
+
+        retType = newType;
+
+    }else if(secondChild->name == Node_Tag){
+        //根据名字找到符号表上对应的节点进行判断
+        TableNode ret = getTableNode(Tag(secondChild));
+        if(ret == NULL || ret->type->kind != STRUCTURE){
+            //TODO: 错误17
+        }else
+            retType = ret->type;       //可能需要深拷贝
+    }
+    return retType;
 }
-void OptTag(Node root){
+char* OptTag(Node root){
+    return root->firstChild->val;
 }
-void Tag(Node root){
+char* Tag(Node root){
+    return root->firstChild->val;
 }
 
 //Declarators
 TableNode VarDec(Node root, Type type){
+    // VarDec → ID
+    // | VarDec LB INT RB
+    TableNode retNode = NULL;
+    if(strcmp(root->firstChild->name, "ID") == 0){
+        retNode = (TableNode)malloc(sizeof(struct TableNode_));
+
+        strcpy(retNode->name, root->firstChild->val);
+
+        retNode->type = type;
+
+        retNode->next = NULL;
+    }else{
+        retNode = VarDec(root->firstChild);
+
+        Type newType = (Type)malloc(sizeof(struct Type_));
+        newType->kind = ARRAY;
+        newType->u.array.elem = retNode->type;
+        newType->u.array.size = stringToInt(root->firstChild->nextBrother->nextBrother->val);
+
+        retNode->type = newType;
+    }
+    return retNode;
 }
 void FunDec(Node root, Type returnType){
+    // FunDec → ID LP VarList RP
+    //      | ID LP RP
+
 }
 void VarList(Node root){
 }
@@ -80,7 +148,7 @@ void Stmt(Node root){
 }
 
 //Local Definitions
-void DefList(Node root){
+FieldList DefList(Node root){
 }
 void Def(Node root){
 }
