@@ -18,11 +18,10 @@ struct Type_
 
         struct{
             Type returnType;
-            char name[32];
-            // 由于假设4，所有的变量都是全局作用域，
-            // 因此无需记录形参，直接将形参插入符号表即可
-            // int argc;
-            // FieldList argv;
+            // 似乎不用记录名字
+            // char name[32];
+            int argc;
+            FieldList argv;
         }function;
     }u;
 };
@@ -31,7 +30,7 @@ struct FieldList_
 {
     char name[33];
     Type type;
-    FieldList tail;
+    FieldList next;
 };
 
 struct TableNode_

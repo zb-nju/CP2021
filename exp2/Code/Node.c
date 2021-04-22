@@ -14,7 +14,9 @@ Node createNode(int lineNum, NodeName name, char* val, int isToken,  int childNu
 
     newNode->name = name;
 
-    newNode->isToken == isToken;
+    newNode->isToken = isToken;
+
+    newNode->childNum = childNum;
 
     newNode->firstChild = NULL;
     newNode->nextBrother = NULL;

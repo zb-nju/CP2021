@@ -39,10 +39,10 @@ void ExtDecList(Node root, Type specifier){
     //ExtDecList → VarDec
     //   | VarDec COMMA ExtDecList
     TableNode tableNode = VarDec(root->firstChild, specifier);
-    if (insert(tableNode) == false){
-        //TODO: solute conflict
+    if (insertIntoSymbolTable(tableNode) == false){
+        //TODO: 错误3
     }
-    if (root->firstChild->nextBrother != NULL)
+    if (root->childNum == 3)
         ExtDecList(root->firstChild->nextBrother->nextBrother, specifier);
 }
 
@@ -65,7 +65,7 @@ Type StuctSpecifier(Node root){
     //    | STRUCT Tag
     Node secondChild = root->firstChild->nextBrother;
     Type retType;
-    if(secondChild == NULL || secondChild->name == Node_OptTag){
+    if(root->childNum == 5){
         //建立一个新的符号表节点，并将该节点插入符号表
 
         if(secondChild != NULL && checkSymbolByName(OptTag(secondChild))){
@@ -87,7 +87,7 @@ Type StuctSpecifier(Node root){
 
         retType = newType;
 
-    }else if(secondChild->name == Node_Tag){
+    }else{
         //根据名字找到符号表上对应的节点进行判断
         TableNode ret = getTableNode(Tag(secondChild));
         if(ret == NULL || ret->type->kind != STRUCTURE){
@@ -109,7 +109,7 @@ TableNode VarDec(Node root, Type type){
     // VarDec → ID
     // | VarDec LB INT RB
     TableNode retNode = NULL;
-    if(strcmp(root->firstChild->name, "ID") == 0){
+    if(root->childNum == 1){
         retNode = (TableNode)malloc(sizeof(struct TableNode_));
 
         strcpy(retNode->name, root->firstChild->val);
@@ -123,6 +123,9 @@ TableNode VarDec(Node root, Type type){
         Type newType = (Type)malloc(sizeof(struct Type_));
         newType->kind = ARRAY;
         newType->u.array.elem = retNode->type;
+        if(root->firstChild->nextBrother->nextBrother->name != Node_INT){
+            // TODO: 错误10
+        }
         newType->u.array.size = stringToInt(root->firstChild->nextBrother->nextBrother->val);
 
         retNode->type = newType;
@@ -131,12 +134,50 @@ TableNode VarDec(Node root, Type type){
 }
 void FunDec(Node root, Type returnType){
     // FunDec → ID LP VarList RP
-    //      | ID LP RP
+    //        | ID LP RP
+    TableNode newNode = (TableNode)malloc(sizeof(struct TableNode_));
+    strcpy(newNode->name, root->firstChild->val);
+    newNode->next = NULL;
+
+    Type newType = (Type)malloc(sizeof(struct Type_));
+    newType->kind = FUNCTION;
+    newType->u.function.returnType = returnType;
+    if(root->childNum == 4){
+        FieldList temp = VarList(root->firstChild->nextBrother->nextBrother);
+        newType->u.function.argv = temp;
+        newType->u.function.argc = calculateArgc(temp);
+    }else{
+        newType->u.function.argv = NULL;
+        newType->u.function.argc = 0;
+    }
+
+    newNode->type = newType;
+    if(insertIntoSymbolTable(newNode) == false){
+        //TODO: 错误4
+    }
 
 }
-void VarList(Node root){
+FieldList VarList(Node root){
+    // VarList → ParamDec COMMA VarList
+    //         | ParamDec
+    FieldList field = ParamDec(root->firstChild);
+    if(root->childNum == 3){
+        field->next = VarList(root->firstChild->nextBrother->nextBrother);
+    }
 }
-void ParamDec(Node root){
+FieldList ParamDec(Node root){
+    // ParamDec → Specifier VarDec
+    Type specifier = Specifier(root->firstChild);
+    TableNode tableNode = VarDec(root->firstChild, specifier);
+    if (insertIntoSymbolTable(tableNode) == false){
+        //TODO: 错误3
+    }
+    FieldList ret = (FieldList)malloc(sizeof(struct FieldList_));
+    strcpy(ret->name, tableNode->name);
+    ret->type = tableNode->type;
+    ret->next = NULL;
+
+    return ret;
 }
 
 //Statements

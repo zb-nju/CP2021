@@ -16,6 +16,7 @@ typedef struct Node_{
     NodeName name;
     int isToken;
     int lineNum;
+    int childNum;
 
     Node firstChild;
     Node nextBrother;
