@@ -19,7 +19,7 @@ struct Type_
         struct{
             Type returnType;
             // 似乎不用记录名字
-            // char name[32];
+            char name[32];
             int argc;
             FieldList argv;
         }function;

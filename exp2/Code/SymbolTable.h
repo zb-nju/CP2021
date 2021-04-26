@@ -7,7 +7,7 @@ TableNode SymbolTable[HASH_TABLE_SIZE];
 
 void initSymbolTable();
 
-unsigned hash(char* forHash);
+unsigned hash(const char* const forHash);
 
 // #define true 1
 // #define false 0

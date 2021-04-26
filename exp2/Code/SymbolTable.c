@@ -1,5 +1,6 @@
 #include"SymbolTable.h"
-#include"stdio.h"
+#include <stdio.h>
+#include <string.h>
 
 void initSymbolTable(){
     for(int i = 0; i < HASH_TABLE_SIZE; i++){
@@ -23,7 +24,7 @@ Boolean insertIntoSymbolTable(TableNode tableNode){
     while(tNode != NULL){
         if(strcmp(name, tNode->name) == 0)
             return false;
-        pre = NULL;
+        pre = tNode;  
         tNode = tNode->next;
     }
     if(pre == NULL)
@@ -34,7 +35,7 @@ Boolean insertIntoSymbolTable(TableNode tableNode){
 }
 
 Boolean checkSymbolByTableNode(TableNode tableNode){
-    return checkByName(tableNode->name);
+    return checkSymbolByName(tableNode->name);
 }
 
 Boolean checkSymbolByName(const char* const name){

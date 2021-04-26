@@ -21,7 +21,21 @@ node* createNode(int lineNum, char* name, char* val, int isToken,  int childNum,
     newNode->firstChild = NULL;
     newNode->nextBrother = NULL;
 
-    if(childNum > 0){
+    if(childNum == 5 && strcmp(newNode->name, "StructSpecifier") == 0){
+        va_list ap;
+        va_start(ap, childNum);
+
+        node* temp = va_arg(ap, node*);
+        newNode->firstChild = temp;
+        for(int i = 1; i < childNum; i++){
+            node* tmp = va_arg(ap, node*);
+            if(tmp!=NULL){
+                temp->nextBrother = tmp;
+                temp = temp->nextBrother;
+            }
+        }
+    }
+    else if(childNum > 0){
         va_list ap;
         va_start(ap, childNum);
 

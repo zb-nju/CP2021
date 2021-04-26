@@ -4,6 +4,6 @@
 
 int stringToInt(const char* const p);
 int calculateArgc(const FieldList const p);
-
+Boolean judgeType(Type a, Type b);
 
 #endif

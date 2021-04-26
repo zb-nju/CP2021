@@ -1,41 +1,56 @@
 #ifndef _SEMANTIC_H_
 #define _SEMANTIC_H_
 
+#include "Node.h"
+#include "DataStruct.h"
+
 //暂时将返回值设置为 void，后续实现时按需删改
 //High-level Definitions
 void Program(Node root);
 
 //似乎并没有暴露这些接口的必要
-// void ExtDefList(Node root);
-// void ExtDef(Node root);
-// void ExtDecList(Node root, Type type);
+void ExtDefList(Node root);
+void ExtDef(Node root);
+void ExtDecList(Node root, Type type);
 
-// //Specifiers
-// Type Specifier(Node root);
-// void StuctSpecifier(Node root);
-// void OptTag(Node root);
-// void Tag(Node root);
+//Specifiers
+Type Specifier(Node root);
+Type StructSpecifier(Node root);
+char* OptTag(Node root);
+char* Tag(Node root);
 
-// //Declarators
-// void VarDec(Node root);
-// void FunDec(Node root);
-// void VarList(Node root);
-// void ParamDec(Node root);
+//Declarators
+TableNode VarDec(Node root, Type type);
+void FunDec(Node root, Type returnType);
+FieldList VarList(Node root);
+FieldList ParamDec(Node root);
 
-// //Statements
-// void CompSt(Node root);
-// void StmtList(Node root);
-// void Stmt(Node root);
+//Statements
+void CompSt(Node root, Type returnType);
+void StmtList(Node root, Type returnType);
+void Stmt(Node root, Type returnType);
 
-// //Local Definitions
-// void DefList(Node root);
-// void Def(Node root);
-// void DecList(Node root);
-// void Dec(Node root);
+//Local Definitions
+void DefList(Node root);
+void Def(Node root);
+void DecList(Node root, Type decType);
+void Dec(Node root, Type decType);
 
-// //Expressions
-// void Exp(Node root);
-// void Args(Node root);
+//Expressions
+Type Exp(Node root);
+void Args(Node root, TableNode tn);
 
+Type Exp_ASSIGNOP(Node root);
+Type Exp_AND_OR(Node root);
+Type Exp_RELOP_CAL(Node root);
+Type Exp_LPRP(Node root);
+Type Exp_MIUNS(Node root);
+Type Exp_NOT(Node root);
+Type Exp_FUNCTION_CALL(Node root);
+Type Exp_ARRAY_VISIT(Node root);
+Type Exp_STRUCT_VISIT(Node root);
+Type Exp_ID(Node root);
+Type Exp_INT(Node root);
+Type Exp_FLOAT(Node root);
 
 #endif

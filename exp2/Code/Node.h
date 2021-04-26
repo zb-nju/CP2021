@@ -22,7 +22,7 @@ typedef struct Node_{
     Node nextBrother;
 };
 
-Node createNode(int lineNum, NodeName name, char* val, Boolean isToken,  int childNum, ...);
+Node createNode(int lineNum, NodeName name, char* val, int isToken,  int childNum, ...);
 
 void printTree(Node root, int depth);
 

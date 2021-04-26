@@ -7,6 +7,7 @@
     void yyerror(char* msg);
     int errorNums=0;
     int errorLine=0;
+    int tmp = 0;
     node* root;
 %}
 
@@ -40,6 +41,9 @@
 %nonassoc LOWER_THAN_ELSE
 %nonassoc ELSE
 
+%nonassoc LOWER_THAN_SEMI
+%nonassoc SEMI
+
 %%
 Program : ExtDefList                            { $$ = createNode(@$.first_line, "Program", "", false, 1, $1); root = $$; }
     ;
@@ -49,7 +53,8 @@ ExtDefList : ExtDef ExtDefList                  { $$ = createNode(@$.first_line,
 ExtDef : Specifier ExtDecList SEMI              { $$ = createNode(@$.first_line, "ExtDef", "", false, 3, $1, $2, $3); }
     | Specifier SEMI                            { $$ = createNode(@$.first_line, "ExtDef", "", false, 2, $1, $2); }
     | Specifier FunDec CompSt                   { $$ = createNode(@$.first_line, "ExtDef", "", false, 3, $1, $2, $3); }
-    | error SEMI                                { errorNums++; printf("Error type B at Line %d: Syntax error.\n", yylineno); }
+    | Specifier error SEMI                      { errorNums++; printf("Error type B at Line %d: Syntax error.\n", yylineno); }
+    | STRUCT SEMI                               { errorNums++; printf("Error type B at Line %d: Unexpected ;'.\n", yylineno); }
     ;
 ExtDecList : VarDec                             { $$ = createNode(@$.first_line, "ExtDecList", "", false, 1, $1); }
     | VarDec COMMA ExtDecList                   { $$ = createNode(@$.first_line, "ExtDecList", "", false, 3, $1, $2, $3); }
@@ -57,9 +62,10 @@ ExtDecList : VarDec                             { $$ = createNode(@$.first_line,
 
 
 Specifier : TYPE                                { $$ = createNode(@$.first_line, "Specifier", "", false, 1, $1); }
-    | StructSpecifier                           { $$ = createNode(@$.first_line, "Specifier", "", false, 1, $1); }
+    | StructSpecifier                           { tmp = yylineno; $$ = createNode(@$.first_line, "Specifier", "", false, 1, $1); }
     ;
 StructSpecifier : STRUCT OptTag LC DefList RC   { $$ = createNode(@$.first_line, "StructSpecifier", "", false, 5, $1, $2, $3, $4, $5); }
+    | STRUCT error LC DefList RC                { errorNums++; printf("Error type B at Line %d: Syntax error.\n", tmp+1); }
     | STRUCT Tag                                { $$ = createNode(@$.first_line, "StructSpecifier", "", false, 2, $1, $2); }
     ;
 OptTag : ID                                     { $$ = createNode(@$.first_line, "OptTag", "", false, 1, $1); }
@@ -93,14 +99,14 @@ StmtList : Stmt StmtList                        { $$ = createNode(@$.first_line,
     | /* empty */                               { $$ = NULL; }
     ;
 Stmt : Exp SEMI                                 { $$ = createNode(@$.first_line, "Stmt", "", false, 2, $1, $2); }
-    //| error '\n'                              { errorNums++; printf("Error type B at Line %d: Syntax error.\n", yylineno); }
+    | Exp %prec LOWER_THAN_SEMI                 { errorNums++; printf("Error type B at Line %d: Missing ';'\n", yylineno-1); }
     | CompSt                                    { $$ = createNode(@$.first_line, "Stmt", "", false, 1, $1); }
     | RETURN Exp SEMI                           { $$ = createNode(@$.first_line, "Stmt", "", false, 3, $1, $2, $3); }
     | IF LP Exp RP Stmt %prec LOWER_THAN_ELSE   { $$ = createNode(@$.first_line, "Stmt", "", false, 5, $1, $2, $3, $4, $5); }
     | IF LP Exp RP Stmt ELSE Stmt               { $$ = createNode(@$.first_line, "Stmt", "", false, 7, $1, $2, $3, $4, $5, $6, $7); }
     | IF LP Exp RP error ELSE Stmt              { errorNums++; printf("Error type B at Line %d: Missing ';'.\n", yylineno); }
     | WHILE LP Exp RP Stmt                      { $$ = createNode(@$.first_line, "Stmt", "", false, 5, $1, $2, $3, $4, $5); }
-    //| error SEMI                              { errorNums++; printf("Error type B at Line %d: Syntax error.\n", yylineno); }
+    | WHILE LP error LC                         { errorNums++; printf("Error type B at Line %d:  Missing ')'\n", yylineno); }
     ;
 
 
@@ -108,6 +114,7 @@ DefList : Def DefList                           { $$ = createNode(@$.first_line,
     | /* empty */                               { $$ = NULL; }
     ;
 Def : Specifier DecList SEMI                    { $$ = createNode(@$.first_line, "Def", "", false, 3, $1, $2, $3); }
+    | Specifier DecList %prec LOWER_THAN_SEMI   { errorNums++; printf("Error type B at Line %d: Missing ';'\n", yylineno-1); }
     | STAR DIV                                  { errorNums++; printf("Error type B at Line %d: Syntax error.\n", yylineno); }
     | error SEMI                                { errorNums++; printf("Error type B at Line %d: Syntax error.\n", yylineno); }
     ;
@@ -136,6 +143,7 @@ Exp : Exp ASSIGNOP Exp                          { $$ = createNode(@$.first_line,
     | ID LP RP                                  { $$ = createNode(@$.first_line, "Exp", "", false, 3, $1, $2, $3); }
     | Exp LB Exp RB                             { $$ = createNode(@$.first_line, "Exp", "", false, 4, $1, $2, $3, $4); }
     | Exp LB error RB                           { errorNums++; printf("Error type B at Line %d: Missing ']'.\n", yylineno); }
+    | Exp LB RB                                 { errorNums++; printf("Error type B at Line %d: Empty dimension.\n", yylineno); }
     | Exp DOT ID                                { $$ = createNode(@$.first_line, "Exp", "", false, 3, $1, $2, $3); }
     | ID                                        { $$ = createNode(@$.first_line, "Exp", "", false, 1, $1); }
     | INT                                       { $$ = createNode(@$.first_line, "Exp", "", false, 1, $1); }

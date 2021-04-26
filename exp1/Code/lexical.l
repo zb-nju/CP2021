@@ -21,8 +21,9 @@ number [1-9][0-9]*
 ws [ \t\n\r]+
 
 ID [_a-zA-Z][_a-zA-Z0-9]*
+ILLEGALID [_a-zA-Z0-9]*
 INT [+-]?(({number}([eE][+-]?{number})?)|0)
-FLOAT [+-]?([0-9]*\.?[0-9]+|[0-9]+\.)([eE][+-]?{number})?
+FLOAT [+-]?([0-9]+\.?[0-9]+|[0-9]+\.)([eE][+-]?{number})?
 DOT "."
 SEMI ";"
 COMMA ","
@@ -55,9 +56,9 @@ TYPE "int"|"float"
 }
 
 "/*" { BEGIN(comment); }
-<comment>[^*]
-<comment>"/"+"*"
-<comment>"*"+[^/]*
+<comment>[^*] 
+<comment>"/"+"*" 
+<comment>"*"+[^/]* 
 <comment>"*"+"/" { BEGIN(INITIAL); }
 
 
@@ -89,6 +90,7 @@ TYPE "int"|"float"
 {ID} { yylval.pnode = createNode(yylineno, "ID", yytext, true, 0);  return ID; }
 {INT} { yylval.pnode = createNode(yylineno, "INT", yytext, true, 0);  return INT; }
 {FLOAT} { yylval.pnode = createNode(yylineno, "FLOAT", yytext, true, 0);  return FLOAT; }
+{ILLEGALID} {errorNums++; printf("Error type A at Line %d: Illegal identifier \'%s\'\n", yylineno, yytext);}
 
 \n { yycolumn = 1;}
 {ws} {}
