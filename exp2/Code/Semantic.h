@@ -19,6 +19,12 @@ Type StructSpecifier(Node root);
 char* OptTag(Node root);
 char* Tag(Node root);
 
+//For struct
+void DefList_Struct(Node root, FieldList alreadyDefined);
+FieldList Def_Struct(Node root);
+FieldList DecList_Struct(Node root, Type decType);
+FieldList Dec_Struct(Node root, Type decType);
+
 //Declarators
 TableNode VarDec(Node root, Type type);
 void FunDec(Node root, Type returnType);

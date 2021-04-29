@@ -11,7 +11,7 @@
 
 typedef struct Node_* Node;
 
-typedef struct Node_{
+struct Node_{
     char *val;
     NodeName name;
     int isToken;

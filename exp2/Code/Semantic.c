@@ -26,11 +26,16 @@ void ExtDef(Node root){
     Type specifier = Specifier(root->firstChild);
     Node secondChild = root->firstChild->nextBrother;
     if (secondChild->name == Node_ExtDecList){
-        ExtDecList(secondChild->nextBrother, specifier);
+        //TODO: fix? 
+        //ExtDecList(secondChild->nextBrother, specifier);
+        ExtDecList(secondChild, specifier);
     }
     else if (secondChild->name == Node_FunDec){
-        FunDec(secondChild->nextBrother, specifier);
-        CompSt(secondChild->nextBrother->nextBrother, specifier);
+        //TODO: fix?
+        //FunDec(secondChild->nextBrother, specifier);
+        //CompSt(secondChild->nextBrother->nextBrother, specifier);
+        FunDec(secondChild, specifier);
+        CompSt(secondChild->nextBrother, specifier);
     }
     else{
     }
@@ -40,7 +45,9 @@ void ExtDecList(Node root, Type specifier){
     //   | VarDec COMMA ExtDecList
     TableNode tableNode = VarDec(root->firstChild, specifier);
     if (insertIntoSymbolTable(tableNode) == false){
-        //TODO: 错误3
+        // Error Type 3
+        printf("Error type 3 at Line %d: Redefined variable '%s'.\n",root->lineNum, tableNode->name);
+        return;
     }
     if (root->childNum == 3)
         ExtDecList(root->firstChild->nextBrother->nextBrother, specifier);
@@ -64,12 +71,14 @@ Type StructSpecifier(Node root){
     //StructSpecifier → STRUCT OptTag LC DefList RC
     //    | STRUCT Tag
     Node secondChild = root->firstChild->nextBrother;
-    Type retType;
+    Type retType = NULL;
     if(root->childNum >= 4){
         //建立一个新的符号表节点，并将该节点插入符号表
 
         if(root->childNum == 5 && checkSymbolByName(OptTag(secondChild))){
-            //TODO: 错误16，实验选做2-3要求根据结构判断是否相同，此处重新做判断
+            // Error Type 16
+            printf("Error Type 16 at Line %d: Refined structure '%s'.\n", secondChild->lineNum, OptTag(secondChild));
+            return retType;
         }
 
         TableNode newNode = (TableNode)malloc(sizeof(struct TableNode_));
@@ -78,13 +87,15 @@ Type StructSpecifier(Node root){
         Type newType = (Type)malloc(sizeof(struct Type_));
 
         newType->kind = STRUCTURE;
+        FieldList alreadyDefined = (FieldList)malloc(sizeof(struct FieldList_));
+        alreadyDefined->next=NULL;
         if(root->childNum == 5){
-            newType->u.structure = DefList(secondChild->nextBrother->nextBrother);
+            DefList_Struct(secondChild->nextBrother->nextBrother, alreadyDefined);
         }else{
-            newType->u.structure = DefList(root->firstChild->nextBrother->nextBrother);
+            DefList_Struct(root->firstChild->nextBrother->nextBrother, alreadyDefined);
         }
+        newType->u.structure = alreadyDefined->next;
         newNode->type = newType;
-
         newNode->next = NULL;
 
         insertIntoSymbolTable(newNode);
@@ -95,7 +106,8 @@ Type StructSpecifier(Node root){
         //根据名字找到符号表上对应的节点进行判断
         TableNode ret = getTableNode(Tag(secondChild));
         if(ret == NULL || ret->type->kind != STRUCTURE){
-            //TODO: 错误17
+            // Error Type 17
+            printf("Error Type 17 at Line %d: Undefined structure '%s'.\n", secondChild->lineNum, Tag(secondChild));
         }else
             retType = ret->type;       //TODO: 可能需要深拷贝
     }
@@ -106,6 +118,60 @@ char* OptTag(Node root){
 }
 char* Tag(Node root){
     return root->firstChild->val;
+}
+
+//For struct
+void DefList_Struct(Node root, FieldList alreadyDefined){
+    if (root == NULL)
+        return;
+
+    FieldList def = Def_Struct(root->firstChild);
+    FieldList tmp = def;
+    while(tmp){
+        FieldList cur = alreadyDefined->next;
+        while(cur){
+            if(strcmp(cur->name, tmp->name)){
+                printf("Error Type 15 at Line %d: Refined field '%s'.\n", root->firstChild->lineNum, tmp->name);
+                break;
+            }
+            cur = cur->next;
+        }
+        tmp = tmp->next;
+    }
+    tmp = alreadyDefined;
+    while(tmp->next){
+        tmp = tmp->next;
+    }
+    tmp->next = def;
+
+    DefList_Struct(root->firstChild->nextBrother, alreadyDefined);
+    return;
+}
+FieldList Def_Struct(Node root){
+    Type specifier = Specifier(root->firstChild);
+    Node secondChild = root->firstChild->nextBrother;
+    return DecList_Struct(secondChild, specifier);
+}
+FieldList DecList_Struct(Node root, Type decType){
+    FieldList ret = Dec_Struct(root->firstChild, decType);
+    if (root->childNum == 3)
+        ret->next = DecList_Struct(root->firstChild->nextBrother->nextBrother, decType);
+
+    return ret;
+}
+FieldList Dec_Struct(Node root, Type decType){
+    FieldList ret=(FieldList)malloc(sizeof(struct FieldList_)); 
+    Node child = root->firstChild;
+    TableNode tableNode = VarDec(child, decType);
+    ret->type = tableNode->type;
+    strcpy(ret->name, tableNode->name);
+    
+    if(root->childNum==3)
+    {
+        //Error Type 15 
+        printf("Error Type 15 at Line %d:  wrongly defined structure '%s'.\n", child->lineNum, ret->name);
+    }
+    return ret;
 }
 
 //Declarators
@@ -129,7 +195,9 @@ TableNode VarDec(Node root, Type type){
         newType->kind = ARRAY;
         newType->u.array.elem = retNode->type;
         if(root->firstChild->nextBrother->nextBrother->name != Node_INT){
-            // TODO: 错误10
+            // Error Type 10
+            printf("Error Type 10 at Line %d: Not an array before [  ].\n", root->firstChild->lineNum);
+            return retNode;
         }
         newType->u.array.size = stringToInt(root->firstChild->nextBrother->nextBrother->val);
 
@@ -158,7 +226,8 @@ void FunDec(Node root, Type returnType){
 
     newNode->type = newType;
     if(insertIntoSymbolTable(newNode) == false){
-        //TODO: 错误4
+        // Error type 4
+        printf("Error type 4 at line %d: Redefined function '%s'.\n", root->lineNum, newNode->name);
     }
 
 }
@@ -176,7 +245,8 @@ FieldList ParamDec(Node root){
     Type specifier = Specifier(root->firstChild);
     TableNode tableNode = VarDec(root->firstChild, specifier);
     if (insertIntoSymbolTable(tableNode) == false){
-        //TODO: 错误3
+        // Error Type 3
+        printf("Error type 3 at Line %d: Redefined variable '%s'.\n",root->lineNum, tableNode->name);
     }
     FieldList ret = (FieldList)malloc(sizeof(struct FieldList_));
     strcpy(ret->name, tableNode->name);
@@ -267,7 +337,7 @@ void Def(Node root){
     // Def → Specifier DecList SEMI
     Type specifier = Specifier(root->firstChild);
     Node secondChild = root->firstChild->nextBrother;
-    DecList(secondChild->nextBrother, specifier);
+    DecList(secondChild, specifier);
 }
 void DecList(Node root, Type decType){
     // DecList → Dec
