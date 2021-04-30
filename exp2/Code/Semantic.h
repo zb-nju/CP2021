@@ -8,7 +8,6 @@
 //High-level Definitions
 void Program(Node root);
 
-//似乎并没有暴露这些接口的必要
 void ExtDefList(Node root);
 void ExtDef(Node root);
 void ExtDecList(Node root, Type type);

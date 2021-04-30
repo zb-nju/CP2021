@@ -13,7 +13,7 @@ int stringToInt(const char* const p){
 int calculateArgc(const FieldList const p){
     FieldList temp = p;
     int ret = 0;
-    while(p != NULL){
+    while(temp != NULL){
         ret++;
         temp = temp->next;
     }

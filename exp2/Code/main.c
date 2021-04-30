@@ -25,9 +25,9 @@ int main(int argc, char** argv) {
 
 	Program(root);
 
-	// if(errorNums==0){ //No errors
-	// 	printTree(root, 0);
-	// }
+	//if(errorNums==0){ //No errors
+	//	printTree(root, 0);
+	//}
 	return 0;
 }
 

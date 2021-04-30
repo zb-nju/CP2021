@@ -44,9 +44,12 @@ Node createNode(int lineNum, NodeName name, char* val, int isToken,  int childNu
         Node temp = va_arg(ap, Node);
         newNode->firstChild = temp;
         for(int i = 1; i < childNum; i++){
-            if(temp != NULL){
-                temp->nextBrother = va_arg(ap, Node);
+            Node tmp = va_arg(ap, Node);
+            if(tmp != NULL){
+                temp->nextBrother = tmp;
                 temp = temp->nextBrother;
+            }else{
+                newNode->childNum--;
             }
         }
     }

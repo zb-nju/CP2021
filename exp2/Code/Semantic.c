@@ -59,10 +59,12 @@ Type Specifier(Node root){
     if(child->name == Node_TYPE){
         Type type = (Type)malloc(sizeof(struct Type_));
         type->kind = BASIC;
-        if(strcmp(child->firstChild->val, "int") == 0)
+        if(strcmp(child->val, "int") == 0){
             type->u.basic = Type_INT;
-        else
+        }
+        else{
             type->u.basic = Type_FLOAT;
+        }
         return type;
     }else
         return StructSpecifier(child);
@@ -243,7 +245,7 @@ FieldList VarList(Node root){
 FieldList ParamDec(Node root){
     // ParamDec → Specifier VarDec
     Type specifier = Specifier(root->firstChild);
-    TableNode tableNode = VarDec(root->firstChild, specifier);
+    TableNode tableNode = VarDec(root->firstChild->nextBrother, specifier);
     if (insertIntoSymbolTable(tableNode) == false){
         // Error Type 3
         printf("Error type 3 at Line %d: Redefined variable '%s'.\n",root->lineNum, tableNode->name);
@@ -262,10 +264,13 @@ void CompSt(Node root, Type returnType){
     if (root == NULL)
         return;
     assert(root->firstChild != NULL);
-    assert(root->firstChild->nextBrother != NULL);
 
-    DefList(root->firstChild->nextBrother);
-    StmtList(root->firstChild->nextBrother->nextBrother, returnType);
+    if(root->firstChild->nextBrother->name == Node_DefList){
+        DefList(root->firstChild->nextBrother);
+        StmtList(root->firstChild->nextBrother->nextBrother, returnType);
+    }else if(root->firstChild->nextBrother->name == Node_StmtList){
+        StmtList(root->firstChild->nextBrother, returnType);
+    }
 }
 void StmtList(Node root, Type returnType){
     // StmtList → Stmt StmtList
@@ -298,21 +303,21 @@ void Stmt(Node root, Type returnType){
         }
     }else if(child->name == Node_WHILE){
         Type t = Exp(child->nextBrother->nextBrother);
-        if(t->kind != BASIC || t->u.basic != Type_INT)
+        if(t!=NULL && (t->kind != BASIC || t->u.basic != Type_INT))
         {
             printf("Other error type at line %d: the condition in WHILE is not Type_INT.\n", child->lineNum);
         }
         Stmt(child->nextBrother->nextBrother->nextBrother->nextBrother, returnType);
     }else if(root->childNum == 5){
         Type t = Exp(child->nextBrother->nextBrother);
-        if(t->kind != BASIC || t->u.basic != Type_INT)
+        if(t!=NULL && (t->kind != BASIC || t->u.basic != Type_INT))
         {
             printf("Other error type at line %d: the condition in IF is not Type_INT.\n", child->lineNum);
         }
         Stmt(child->nextBrother->nextBrother->nextBrother->nextBrother, returnType);
     }else{
         Type t = Exp(child->nextBrother->nextBrother);
-        if(t->kind != BASIC || t->u.basic != Type_INT)
+        if(t!=NULL && (t->kind != BASIC || t->u.basic != Type_INT))
         {
             printf("Other error type at line %d: the condition in IF is not Type_INT.\n", child->lineNum);
         }
@@ -388,9 +393,9 @@ Type Exp(Node root){
         if(child->name == Node_ID){
             return Exp_ID(root);
         }else if(child->name == Node_INT){
-            return Exp_FLOAT(child);
-        }else if(child->name == Node_FLOAT){
             return Exp_INT(child);
+        }else if(child->name == Node_FLOAT){
+            return Exp_FLOAT(child);
         }
     }else if(root->childNum == 2){
         if(child->name == Node_MINUS){
@@ -448,11 +453,15 @@ Type Exp_ASSIGNOP(Node root){
     Type exp1 = Exp(child);
     Type exp2 = Exp(child->nextBrother->nextBrother);
 
+    if(exp1==NULL || exp2==NULL){
+        return NULL;
+    }
     if(judgeType(exp1, exp2)==false){
         printf("Error Type 5 at Line %d: Type mismatched for assignment.\n", child->lineNum);
     }
 
     Node childOfChild = child->firstChild;
+    //printf("%s\n", NodeNameToString(childOfChild->name));
     if(!(child->childNum==1 && childOfChild->name == Node_ID) && !(child->childNum==4 && childOfChild->name == Node_Exp) && !(child->childNum==3 && childOfChild->nextBrother->name == Node_DOT)){
         printf("Error type 6 at Line %d: The left-hand side of an assignment must be a variable.\n", child->lineNum);
     }
@@ -481,6 +490,9 @@ Type Exp_RELOP_CAL(Node root){
     Node child = root->firstChild;
     Type exp1 = Exp(child);
     Type exp2 = Exp(child->nextBrother->nextBrother);
+    if(exp1 == NULL){
+        return NULL;
+    }
 
     if(exp1->kind!=BASIC || judgeType(exp1, exp2)==false){
         printf("Error type 7 at Line %d: Type mismatched for operands.\n", child->lineNum);
@@ -546,7 +558,7 @@ Type Exp_ARRAY_VISIT(Node root){
         return NULL;
     }
     if(index->kind!=BASIC || index->u.basic!=Type_INT){
-        printf("Error Type 12 at Line %d: Not an integer between [ and ].\n", root->lineNum);
+        printf("Error Type 12 at Line %d: Array argument is not an integer.\n", root->lineNum);
         return NULL;
     }
     return array->u.array.elem;
