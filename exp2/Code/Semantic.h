@@ -27,8 +27,10 @@ FieldList Dec_Struct(Node root, Type decType);
 //Declarators
 TableNode VarDec(Node root, Type type);
 void FunDec(Node root, Type returnType);
-FieldList VarList(Node root);
-FieldList ParamDec(Node root);
+FieldList VarList(Node root, Boolean flag);
+FieldList ParamDec(Node root, Boolean flag);
+
+void FunDeclare(Node root, Type returnType);
 
 //Statements
 void CompSt(Node root, Type returnType);

@@ -2,6 +2,8 @@
 #define _DATA_STRUCT_H_
 #define HASH_TABLE_SIZE 50
 
+#include "MyEnum.h"
+
 typedef struct Type_* Type;
 typedef struct FieldList_* FieldList;
 typedef struct TableNode_* TableNode;
@@ -21,7 +23,9 @@ struct Type_
             // 似乎不用记录名字
             char name[32];
             int argc;
+            int line;
             FieldList argv;
+            Boolean decFlag;   // 0表示声明，1表示定义
         }function;
     }u;
 };

@@ -49,6 +49,7 @@ ExtDefList : ExtDef ExtDefList                  { $$ = createNode(@$.first_line,
 ExtDef : Specifier ExtDecList SEMI              { $$ = createNode(@$.first_line, Node_ExtDef, "", false, 3, $1, $2, $3); }
     | Specifier SEMI                            { $$ = createNode(@$.first_line, Node_ExtDef, "", false, 2, $1, $2); }
     | Specifier FunDec CompSt                   { $$ = createNode(@$.first_line, Node_ExtDef, "", false, 3, $1, $2, $3); }
+    | Specifier FunDec SEMI                     { $$ = createNode(@$.first_line, Node_ExtDef, "", false, 2, $1, $2); }
     | error SEMI                                { errorNums++; printf("Error type B at Line %d: Syntax error.\n", yylineno); }
     ;
 ExtDecList : VarDec                             { $$ = createNode(@$.first_line, Node_ExtDecList, "", false, 1, $1); }

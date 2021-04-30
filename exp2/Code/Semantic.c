@@ -6,10 +6,23 @@
 #include "Help.h"
 #include <string.h>
 
+extern TableNode SymbolTable[HASH_TABLE_SIZE];
+
 //High-level Definitions
 void Program(Node root){
     initSymbolTable();
     ExtDefList(root->firstChild);
+
+    // 判断是否有只声明无定义的函数
+    for(int i=0; i<HASH_TABLE_SIZE; ++i){
+        if(SymbolTable[i]!=NULL && SymbolTable[i]->type->kind == FUNCTION){
+            if(SymbolTable[i]->type->u.function.decFlag == false){
+                // Error Type 18
+                printf("Error type 18 at Line %d: Undefined function '%s'.\n", SymbolTable[i]->type->u.function.line, SymbolTable[i]->type->u.function.name);
+            }
+        }
+    }
+   
 }
 void ExtDefList(Node root){
     if (root == NULL)
@@ -23,19 +36,19 @@ void ExtDef(Node root){
     //ExtDef → Specifier ExtDecList SEMI
     //   | Specifier SEMI
     //   | Specifier FunDec CompSt
+    //   | Specifier FunDec SEMI
     Type specifier = Specifier(root->firstChild);
     Node secondChild = root->firstChild->nextBrother;
     if (secondChild->name == Node_ExtDecList){
-        //TODO: fix? 
-        //ExtDecList(secondChild->nextBrother, specifier);
         ExtDecList(secondChild, specifier);
     }
     else if (secondChild->name == Node_FunDec){
-        //TODO: fix?
-        //FunDec(secondChild->nextBrother, specifier);
-        //CompSt(secondChild->nextBrother->nextBrother, specifier);
-        FunDec(secondChild, specifier);
-        CompSt(secondChild->nextBrother, specifier);
+        if(secondChild->nextBrother == NULL){
+            FunDeclare(secondChild, specifier);
+        }else{
+            FunDec(secondChild, specifier);
+            CompSt(secondChild->nextBrother, specifier);
+        }
     }
     else{
     }
@@ -132,7 +145,7 @@ void DefList_Struct(Node root, FieldList alreadyDefined){
     while(tmp){
         FieldList cur = alreadyDefined->next;
         while(cur){
-            if(strcmp(cur->name, tmp->name)){
+            if(strcmp(cur->name, tmp->name)==0){
                 printf("Error Type 15 at Line %d: Refined field '%s'.\n", root->firstChild->lineNum, tmp->name);
                 break;
             }
@@ -218,35 +231,61 @@ void FunDec(Node root, Type returnType){
     newType->kind = FUNCTION;
     newType->u.function.returnType = returnType;
     if(root->childNum == 4){
-        FieldList temp = VarList(root->firstChild->nextBrother->nextBrother);
+        FieldList temp = VarList(root->firstChild->nextBrother->nextBrother, true);
         newType->u.function.argv = temp;
         newType->u.function.argc = calculateArgc(temp);
     }else{
         newType->u.function.argv = NULL;
         newType->u.function.argc = 0;
     }
+    strcpy(newType->u.function.name, root->firstChild->val);
+    newType->u.function.line = root->lineNum;
+    newType->u.function.decFlag = true;
 
     newNode->type = newType;
     if(insertIntoSymbolTable(newNode) == false){
-        // Error type 4
-        printf("Error type 4 at line %d: Redefined function '%s'.\n", root->lineNum, newNode->name);
+        TableNode alreadyExist = getTableNode(newNode->name);
+        if(alreadyExist->type->u.function.decFlag == false){
+            FieldList argvList = alreadyExist->type->u.function.argv;
+            FieldList newList = newType->u.function.argv;
+            if(judgeType(alreadyExist->type->u.function.returnType, newType->u.function.returnType) == false){
+                printf("Error type 19 at Line %d: Inconsistent declaration of function '%s'.\n", root->lineNum, alreadyExist->name);
+                return;
+            }
+
+            while(newList != NULL && argvList != NULL){
+                if(judgeType(newList->type, argvList->type) == false){
+                    printf("Error type 19 at Line %d: Inconsistent declaration of function '%s'.\n", root->lineNum, alreadyExist->name);
+                    return;
+                }
+                newList = newList->next;
+                argvList = argvList->next;
+            }
+            if(newList != NULL || argvList != NULL){
+                printf("Error type 19 at Line %d: Inconsistent declaration of function '%s'.\n", root->lineNum, alreadyExist->name);
+            }
+            alreadyExist->type->u.function.decFlag = true;
+        }else{
+            // Error type 4
+            printf("Error type 4 at line %d: Redefined function '%s'.\n", root->lineNum, newNode->name);
+        }
     }
 
 }
-FieldList VarList(Node root){
+FieldList VarList(Node root, Boolean flag){
     // VarList → ParamDec COMMA VarList
     //         | ParamDec
-    FieldList field = ParamDec(root->firstChild);
+    FieldList field = ParamDec(root->firstChild, flag);
     if(root->childNum == 3){
-        field->next = VarList(root->firstChild->nextBrother->nextBrother);
+        field->next = VarList(root->firstChild->nextBrother->nextBrother, flag);
     }
     return field;
 }
-FieldList ParamDec(Node root){
+FieldList ParamDec(Node root, Boolean flag){
     // ParamDec → Specifier VarDec
     Type specifier = Specifier(root->firstChild);
     TableNode tableNode = VarDec(root->firstChild->nextBrother, specifier);
-    if (insertIntoSymbolTable(tableNode) == false){
+    if (flag && insertIntoSymbolTable(tableNode) == false){
         // Error Type 3
         printf("Error type 3 at Line %d: Redefined variable '%s'.\n",root->lineNum, tableNode->name);
     }
@@ -256,6 +295,54 @@ FieldList ParamDec(Node root){
     ret->next = NULL;
 
     return ret;
+}
+
+void FunDeclare(Node root, Type returnType){
+    // FunDec → ID LP VarList RP
+    //        | ID LP RP
+    TableNode newNode = (TableNode)malloc(sizeof(struct TableNode_));
+    strcpy(newNode->name, root->firstChild->val);
+    newNode->next = NULL;
+
+    Type newType = (Type)malloc(sizeof(struct Type_));
+    newType->kind = FUNCTION;
+    newType->u.function.returnType = returnType;
+    if(root->childNum == 4){
+        FieldList temp = VarList(root->firstChild->nextBrother->nextBrother, false);
+        newType->u.function.argv = temp;
+        newType->u.function.argc = calculateArgc(temp);
+    }else{
+        newType->u.function.argv = NULL;
+        newType->u.function.argc = 0;
+    }
+    strcpy(newType->u.function.name, root->firstChild->val);
+    newType->u.function.line = root->lineNum;
+    newType->u.function.decFlag = false;
+
+    newNode->type = newType;
+    if(insertIntoSymbolTable(newNode) == false){
+        TableNode alreadyExist = getTableNode(newNode->name);
+        FieldList argvList = alreadyExist->type->u.function.argv;
+        FieldList newList = newType->u.function.argv;
+        if(judgeType(alreadyExist->type->u.function.returnType, newType->u.function.returnType) == false){
+            printf("Error type 19 at Line %d: Inconsistent declaration of function '%s'.\n", root->lineNum, alreadyExist->name);
+            return;
+        }
+
+        while(newList != NULL && argvList != NULL){
+            if(judgeType(newList->type, argvList->type) == false){
+                printf("Error type 19 at Line %d: Inconsistent declaration of function '%s'.\n", root->lineNum, alreadyExist->name);
+                return;
+            }
+            newList = newList->next;
+            argvList = argvList->next;
+        }
+        if(newList != NULL || argvList != NULL){
+            printf("Error type 19 at Line %d: Inconsistent declaration of function '%s'.\n", root->lineNum, alreadyExist->name);
+        }
+        
+    }
+
 }
 
 //Statements
@@ -277,10 +364,11 @@ void StmtList(Node root, Type returnType){
     //          | /*empty*/
     if (root == NULL)
         return;
-    assert(root->firstChild != NULL);
-
-    Stmt(root->firstChild, returnType);
-    StmtList(root->firstChild->nextBrother, returnType);
+    if(root->firstChild != NULL){
+        Stmt(root->firstChild, returnType);
+        StmtList(root->firstChild->nextBrother, returnType);
+    }
+    
 }
 void Stmt(Node root, Type returnType){
     // Stmt → Exp SEMI
