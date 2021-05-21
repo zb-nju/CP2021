@@ -7,6 +7,8 @@
 extern FILE* fp;
 extern InterCode head;
 extern InterCode tail;
+int tempNums = 0;
+int labelNums = 0;
 
 void printOp(Operand op){
     switch (op->kind)
@@ -228,7 +230,7 @@ InterCode newIR(int kind, ...){
         code->u.if_goto.x = va_arg(vaList, Operand);
         //printf("va_arg(vaList, char*): %s\n",va_arg(vaList, char*));
         strcpy(code->u.if_goto.relop, va_arg(vaList, char*));
-        printf("code->u.if_goto.relop: %s\n",code->u.if_goto.relop);
+        //printf("code->u.if_goto.relop: %s\n",code->u.if_goto.relop);
         code->u.if_goto.y = va_arg(vaList, Operand);
         code->u.if_goto.label_z = va_arg(vaList, Operand);
         break;
@@ -271,4 +273,295 @@ Operand newOperand(int kind, ...){
     }
 
     return op;
+}
+
+Operand newTemp(){
+    tempNums++;
+    char tempName[10] = {0};
+    sprintf(tempName, "t%d", tempNums);
+    Operand ret = newOperand(TEMP_VAR, tempName);
+    return ret;
+}
+
+Operand newLabel(){
+    labelNums++;
+    char labelName[10] = {0};
+    sprintf(labelName, "label%d", labelName);
+    Operand ret = newOperand(LABEL_OP, labelName);
+    return ret;
+}
+
+void translate_Cond(Node root, Operand label_true, Operand label_false){
+    Node child = root->firstChild;
+    if(child->nextBrother->name == Node_RELOP){
+        Operand t1 = newTemp();
+        Operand t2 = newTemp();
+        translate_Exp(child, t1);
+        translate_Exp(child->nextBrother->nextBrother, t2);
+        // TODO: t1->kind == ADDRESS?   t2->kind == ADDRESS?
+        addIR(newIR(RELOP_GOTO_IR, t1, child->nextBrother->val, t2, label_true));
+        addIR(newIR(GOTO_IR, label_false));
+    }
+    else if(child->name == Node_NOT){
+        translate_Cond(child->nextBrother, label_false, label_true);
+    }
+    else if(child->nextBrother->name == Node_AND){
+        Operand label1 = newLabel();
+        translate_Cond(child, label1, label_false);
+        addIR(newIR(LABEL_IR, label1));
+        translate_Cond(child->nextBrother->nextBrother, label_true, label_false);
+    }
+    else if(child->nextBrother->name == Node_OR){
+        Operand label1 = newLabel();
+        translate_Cond(child, label_true, label1);
+        addIR(newIR(LABEL_IR, label1));
+        translate_Cond(child->nextBrother->nextBrother, label_true, label_false);
+    }
+    else{
+        Operand t1 = newTemp();
+        translate_Exp(root, t1);
+        // TODO: t1->kind == ADDRESS?
+        Operand const_zero = newOperand(CONSTANT, 0);
+        addIR(newIR(RELOP_GOTO_IR, t1, "!=", const_zero, label_true));
+        addIR(newIR(GOTO_IR, label_false));
+    }
+}
+
+void translate_CompSt(Node root){
+    if (root == NULL)
+        return;
+    assert(root->firstChild != NULL);
+
+    if(root->firstChild->nextBrother->name == Node_DefList){
+        translate_DefList(root->firstChild->nextBrother);
+        translate_StmtList(root->firstChild->nextBrother->nextBrother);
+    }else if(root->firstChild->nextBrother->name == Node_StmtList){
+        translate_StmtList(root->firstChild->nextBrother);
+    }
+}
+
+void translate_StmtList(Node root){
+    if (root == NULL)
+        return;
+    if(root->firstChild != NULL){
+        translate_Stmt(root->firstChild);
+        translate_StmtList(root->firstChild->nextBrother);
+    }
+}
+
+void translate_Stmt(Node root){
+    Node child = root->firstChild;
+    if(child->name == Node_Exp){
+        translate_Exp(child, NULL);
+    }else if(child->name == Node_CompSt){
+        translate_CompSt(child);
+    }else if(child->name == Node_RETURN){
+        Operand t1 = newTemp();
+        translate_Exp(child->nextBrother, t1);
+        addIR(newOperand(RETURN_IR, t1));
+    }else if(child->name == Node_WHILE){
+        Operand label1 = newLabel();
+        Operand label2 = newLabel();
+        Operand label3 = newLabel();
+        addIR(newIR(LABEL_IR, label1));
+        translate_Cond(root, label2, label3);
+        addIR(newIR(LABEL_IR, label2));
+        translate_Stmt(child->nextBrother->nextBrother->nextBrother->nextBrother);
+        addIR(newIR(GOTO_IR, label1));
+        addIR(newIR(LABEL_IR, label3));
+    }else if(root->childNum == 5){      // Stmt → IF LP Exp RP Stmt
+        Operand label1 = newLabel();
+        Operand label2 = newLabel();
+        translate_Cond(root, label1, label2);
+        addIR(newIR(LABEL_IR, label1));
+        translate_Stmt(child->nextBrother->nextBrother->nextBrother->nextBrother);
+        addIR(newIR(LABEL_IR, label2));
+    }else{                              // Stmt → IF LP Exp RP Stmt ELSE Stmt
+        Operand label1 = newLabel();
+        Operand label2 = newLabel();
+        Operand label3 = newLabel();
+        translate_Cond(root, label1, label2);
+        addIR(newIR(LABEL_IR, label1));
+        translate_Stmt(child->nextBrother->nextBrother->nextBrother->nextBrother);
+        addIR(newIR(GOTO_IR, label3));
+        addIR(newIR(LABEL_IR, label2));
+        translate_Stmt(child->nextBrother->nextBrother->nextBrother->nextBrother->nextBrother->nextBrother);
+        addIR(newIR(LABEL_IR, label3));
+    }
+}
+
+void translate_DefList(Node root){
+    if (root == NULL)
+        return;
+    assert(root->firstChild != NULL);
+
+    translate_Def(root->firstChild);
+    translate_DefList(root->firstChild->nextBrother);
+}
+void translate_Def(Node root){
+    Node secondChild = root->firstChild->nextBrother;
+    translate_DecList(secondChild);
+}
+void translate_DecList(Node root){
+    translate_Dec(root->firstChild);
+    if (root->childNum == 3)
+        translate_DecList(root->firstChild->nextBrother->nextBrother);
+}
+void translate_Dec(Node root){
+    Node child = root->firstChild;
+    TableNode tableNode = VarDec(child, decType);
+    if (insertIntoSymbolTable(tableNode) == false){
+        // Error Type 3
+        printf("Error Type 3 at Line %d: Refined variable '%s'.\n", child->lineNum, tableNode->name);
+    }
+    if (root->childNum == 3){
+        Type t = Exp(child->nextBrother->nextBrother);
+        if(judgeType(decType, t)==false){
+            printf("Error Type 5 at Line %d: Type mismatched for assignment.\n", child->lineNum);
+        }
+    }
+}
+
+void translate_Exp(Node root, Operand place){
+    Node child = root->firstChild;
+    if(root->childNum == 1){
+        if(child->name == Node_ID){
+            translate_Exp_ID(root, place);
+        }else if(child->name == Node_INT){
+            translate_Exp_INT(child, place);
+        }/*else if(child->name == Node_FLOAT){
+            translate_Exp_FLOAT(child, place);
+        }*/
+    }else if(root->childNum == 2){
+        if(child->name == Node_MINUS){
+            translate_Exp_MIUNS(root, place);
+        }else if(child->name == Node_NOT){
+            translate_Exp_NOT(root, place);
+        }
+    }else if(root->childNum == 3){
+        if(child->name == Node_Exp){
+            Node secondChild = child->nextBrother;
+            if(secondChild->name == Node_ASSIGNOP)
+                translate_Exp_ASSIGNOP(root, place);
+            else if(secondChild->name == Node_AND || secondChild->name == Node_OR)
+                translate_Exp_AND_OR(root, place);
+            else if(secondChild->name == Node_DOT)
+                translate_Exp_STRUCT_VISIT(root, place);
+            else
+                translate_Exp_RELOP_CAL(root, place);
+        }else if(child->name == Node_LP){
+            translate_Exp_LPRP(root, place);
+        }else if(child->name == Node_ID){
+            translate_Exp_FUNCTION_CALL(root, place);
+        }
+    }else{
+        if(child->name == Node_ID){
+            translate_Exp_FUNCTION_CALL(root, place);
+        }else if(child->name == Node_Exp){
+            translate_Exp_ARRAY_VISIT(root, place);
+        }
+    }
+}
+
+void translate_Exp_ASSIGNOP(Node root, Operand place){
+    Operand t1 = newTemp();
+    translate_Exp(root->firstChild->nextBrother->nextBrother, t1);
+    Operand t2 = newTemp();
+    translate_Exp(root->firstChild, t2);
+    addIR(newIR(ASSIGN_IR, t2, t1));
+}
+
+void translate_Exp_AND_OR(Node root, Operand place){
+    Operand label1 = newLabel();
+    Operand label2 = newLabel();
+    Operand const_zero = newOperand(CONSTANT, 0);
+    addIR(newIR(ASSIGN_IR, place, const_zero));
+    translate_Cond(root, label1, label2);
+    addIR(newIR(LABEL_IR, label1));
+    Operand const_one = newOperand(CONSTANT, 1);
+    addIR(newIR(ASSIGN_IR, place, const_one));
+    addIR(newIR(LABEL_IR, label2));
+}
+
+void translate_Exp_RELOP_CAL(Node root, Operand place){
+    if(root->firstChild->nextBrother->name == Node_RELOP){
+        Operand label1 = newLabel();
+        Operand label2 = newLabel();
+        Operand const_zero = newOperand(CONSTANT, 0);
+        addIR(newIR(ASSIGN_IR, place, const_zero));
+        translate_Cond(root, label1, label2);
+        addIR(newIR(LABEL_IR, label1));
+        Operand const_one = newOperand(CONSTANT, 1);
+        addIR(newIR(ASSIGN_IR, place, const_one));
+        addIR(newIR(LABEL_IR, label2));
+    }else{  // PLUS, MINUS, STAR, DIV
+        Operand t1 = newTemp();
+        Operand t2 = newTemp();
+        translate_Exp(root->firstChild, t1);
+        translate_Exp(root->firstChild->nextBrother->nextBrother, t2);
+        switch (root->firstChild->nextBrother->name)
+        {
+        case Node_PLUS:
+            addIR(newIR(ADD_IR, place, t2, t1));
+            break;
+        case Node_MINUS:
+            addIR(newIR(SUB_IR, place, t2, t1));
+            break;
+        case Node_STAR:
+            addIR(newIR(MUL_IR, place, t2, t1));
+            break;
+        case Node_DIV:
+            addIR(newIR(DIV_IR, place, t2, t1));
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+void translate_Exp_LPRP(Node root, Operand place){
+    translate_Exp(root->firstChild->nextBrother, place);
+}
+
+void translate_Exp_MIUNS(Node root, Operand place){
+    Operand t1 = newTemp();
+    translateExp(root->firstChild->nextBrother, t1);
+    Operand t2 = newOperand(CONSTANT, 0);
+    genInterCode(SUB_IR, place, t2, t1);
+}
+
+void translate_Exp_NOT(Node root, Operand place){
+    Operand label1 = newLabel();
+    Operand label2 = newLabel();
+    Operand const_zero = newOperand(CONSTANT, 0);
+    addIR(newIR(ASSIGN_IR, place, const_zero));
+    translate_Cond(root, label1, label2);
+    addIR(newIR(LABEL_IR, label1));
+    Operand const_one = newOperand(CONSTANT, 1);
+    addIR(newIR(ASSIGN_IR, place, const_one));
+    addIR(newIR(LABEL_IR, label2));
+}
+
+void translate_Exp_FUNCTION_CALL(Node root, Operand place){
+
+}
+
+void translate_Exp_ARRAY_VISIT(Node root, Operand place){
+
+}
+
+void translate_Exp_STRUCT_VISIT(Node root, Operand place){
+
+}
+
+void translate_Exp_ID(Node root, Operand place){
+    //TODO: May have some problem.
+
+    place->kind = VARIABLE;
+    strcpy(place->u.value, root->firstChild->val);
+}
+
+void translate_Exp_INT(Node root, Operand place){
+    place->kind = CONSTANT;
+    place->u.var_no = atoi(root->val);
 }

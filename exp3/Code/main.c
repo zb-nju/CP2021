@@ -1,5 +1,5 @@
 //Generate parser
-/*#include<stdio.h>
+#include<stdio.h>
 #include"Node.h"
 #include"syntax.tab.h"
 #include"Semantic.h"
@@ -34,12 +34,11 @@ int main(int argc, char** argv) {
 	// 	printTree(root, 0);
 	// }
 	return 0;
-}*/
+}
 
 // Test the struct InterCode and the function printIR
-#include<stdio.h>
+/*#include<stdio.h>
 #include"InterCode.h"
-
 
 FILE* fp;
 InterCode head = NULL;
@@ -84,7 +83,7 @@ int main(int argc, char** argv) {
 
 	printIR(head);
 	return 0;
-}
+}*/
 
 //Generate scanner
 /*#include<stdio.h>
