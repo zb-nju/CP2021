@@ -409,16 +409,15 @@ void translate_DecList(Node root){
 }
 void translate_Dec(Node root){
     Node child = root->firstChild;
-    TableNode tableNode = VarDec(child, decType);
-    if (insertIntoSymbolTable(tableNode) == false){
-        // Error Type 3
-        printf("Error Type 3 at Line %d: Refined variable '%s'.\n", child->lineNum, tableNode->name);
+    if (root->childNum == 1){
+        translate_VarDec(child, NULL);
     }
-    if (root->childNum == 3){
-        Type t = Exp(child->nextBrother->nextBrother);
-        if(judgeType(decType, t)==false){
-            printf("Error Type 5 at Line %d: Type mismatched for assignment.\n", child->lineNum);
-        }
+    else if (root->childNum == 3){
+        Operand t1 = newTemp();
+        translateVarDec(child, t1);
+        Operand t2 = newTemp();
+        translateExp(child->nextBrother->nextBrother, t2);
+        addIR(newIR(ASSIGN_IR, t1, t2));
     }
 }
 

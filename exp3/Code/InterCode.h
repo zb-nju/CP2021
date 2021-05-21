@@ -62,8 +62,8 @@ void translate_DecList_Struct(Node root, Type decType);
 void translate_Dec_Struct(Node root, Type decType);
 
 //Declarators
-void translate_VarDec(Node root, Type type);
-void translate_FunDec(Node root, Type returnType);
+void translate_VarDec(Node root, Operand place);
+void translate_FunDec(Node root);
 void translate_VarList(Node root, Boolean flag);
 void translate_ParamDec(Node root, Boolean flag);
 
