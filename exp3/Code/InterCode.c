@@ -410,7 +410,7 @@ void translate_DecList(Node root){
 void translate_Dec(Node root){
     Node child = root->firstChild;
     if (root->childNum == 1){
-        translate_VarDec(child, NULL);
+        translate_VarDec(child, NULL);  //TODO
     }
     else if (root->childNum == 3){
         Operand t1 = newTemp();
@@ -541,8 +541,55 @@ void translate_Exp_NOT(Node root, Operand place){
     addIR(newIR(LABEL_IR, label2));
 }
 
-void translate_Exp_FUNCTION_CALL(Node root, Operand place){
+void translate_Args(Node root, Arg_list arg_list){
+    while(root->childNum != 1){
+        Operand t1 = newTemp();
+        translate_Exp(root->firstChild, t1);
+        Arg_list tmp = (Arg_list)malloc(sizeof(struct Arg_list_));
+        tmp->arg = t1;
+        tmp->next = arg_list;
+        arg_list = tmp;
+        root = root->firstChild->nextBrother->nextBrother;
+    }
 
+    Operand t1 = newTemp();
+    translate_Exp(root->firstChild, t1);
+    Arg_list tmp = (Arg_list)malloc(sizeof(struct Arg_list_));
+    tmp->arg = t1;
+    tmp->next = arg_list;
+    arg_list = tmp;
+}
+
+void translate_Exp_FUNCTION_CALL(Node root, Operand place){
+    char function[32];
+    strcpy(function, root->firstChild->val);
+    if(root->childNum == 3){        // Exp → ID LP RP
+        if(!strcmp(function, "read")){
+            addIR(newIR(READ_IR, place));
+            return;
+        }
+        Operand funcOp = newOperand(FUNCTION_OP, function);
+        addIR(newIR(CALL_IR, place, funcOp));
+        return;
+    }
+    else if(root->childNum == 4){                           // Exp → ID LP Args RP
+        Arg_list arg_list = NULL;
+        translate_Args(root->firstChild->nextBrother->nextBrother, arg_list);
+        if(!strcmp(function, "write")){
+            addIR(newIR(WRITE_IR, arg_list->arg));
+            Operand const_zero = newOperand(CONSTANT, 0);
+            addIR(newIR(ASSIGN_IR, place, const_zero));
+            return;
+        }
+        while (arg_list != NULL)
+        {
+            addIR(newIR(ARG_IR, arg_list->arg));
+            arg_list = arg_list->next;
+        }
+        Operand funcOp = newOperand(FUNCTION_OP, function);
+        addIR(newIR(CALL_IR, place, funcOp));
+        return;
+    }
 }
 
 void translate_Exp_ARRAY_VISIT(Node root, Operand place){

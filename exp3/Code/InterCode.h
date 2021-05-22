@@ -5,6 +5,7 @@
 
 typedef struct Operand_* Operand;
 typedef struct InterCode_* InterCode;
+typedef struct Arg_list_* Arg_list;
 
 typedef struct Operand_{
     enum { VARIABLE, CONSTANT, ADDRESS, TEMP_VAR, ADDR_VALUE, FUNCTION_OP, LABEL_OP, RELOP_OP } kind;
@@ -27,6 +28,11 @@ typedef struct InterCode_{
     InterCode prev, next;
 }InterCode_;
 
+
+typedef struct Arg_list_{
+    Operand arg;
+    Arg_list next;
+}Arg_list_;
 
 
 
@@ -80,7 +86,7 @@ void translate_Dec(Node root);
 
 //Expressions
 void translate_Exp(Node root, Operand place);
-void translate_Args(Node root, TableNode tn);
+void translate_Args(Node root, Arg_list arg_list);
 
 void translate_Exp_ASSIGNOP(Node root, Operand place);
 void translate_Exp_AND_OR(Node root, Operand place);
