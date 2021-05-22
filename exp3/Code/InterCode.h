@@ -2,6 +2,7 @@
 #define _INTERCODE_H_
 
 #include"Node.h"
+#include"DataStruct.h"
 
 typedef struct Operand_* Operand;
 typedef struct InterCode_* InterCode;
@@ -55,11 +56,11 @@ void translate_ExtDefList(Node root);
 void translate_ExtDef(Node root);
 void translate_ExtDecList(Node root, Type type);
 
-//Specifiers
-void translate_Specifier(Node root);
-void translate_StructSpecifier(Node root);
-char* translate_OptTag(Node root);
-char* translate_Tag(Node root);
+// //Specifiers
+// void translate_Specifier(Node root);
+// void translate_StructSpecifier(Node root);
+// char* translate_OptTag(Node root);
+// char* translate_Tag(Node root);
 
 //For struct
 void translate_DefList_Struct(Node root, FieldList alreadyDefined);

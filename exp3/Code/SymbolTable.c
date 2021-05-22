@@ -24,7 +24,7 @@ Boolean insertIntoSymbolTable(TableNode tableNode){
     while(tNode != NULL){
         if(strcmp(name, tNode->name) == 0)
             return false;
-        pre = tNode;  
+        pre = tNode;
         tNode = tNode->next;
     }
     if(pre == NULL)
@@ -58,4 +58,23 @@ TableNode getTableNode(const char* const name){
         tNode = tNode->next;
     }
     return NULL;
+}
+
+int lookUpStructField(const char* const structName, const char* const fieldName){
+    TableNode tNode = getTableNode(structName);
+    if(tNode == NULL || tNode->type->kind != STRUCTURE)
+        return -1;
+    int ret = 0;
+    FieldList fl = tNode->type->u.structure;
+    while(fl != NULL){
+        if(!strcmp(fl->name, fieldName)){
+            break;
+        }
+        else{
+            // only int in struct
+            ret += 4;
+        }
+        fl = fl->next;
+    }
+    return ret;
 }

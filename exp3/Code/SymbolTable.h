@@ -19,4 +19,6 @@ Boolean checkSymbolByName(const char* const name);
 
 TableNode getTableNode(const char* const name);
 
+int lookUpStructField(const char* const structName, const char* const fieldName);
+
 #endif
