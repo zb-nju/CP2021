@@ -41,6 +41,7 @@ struct TableNode_
 {
     char name[33];
     Type type;
+    char variable[33];
     TableNode next;
 };
 
