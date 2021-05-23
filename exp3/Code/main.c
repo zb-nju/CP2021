@@ -5,6 +5,7 @@
 #include"Semantic.h"
 #include"InterCode.h"
 
+
 extern void yyrestart(FILE *);
 extern int yyparse();
 
@@ -18,26 +19,24 @@ InterCode head = NULL;
 InterCode tail = NULL;
 
 int main(int argc, char** argv) {
-	perror("1");
 	if(argc <= 1) return 1;
-	perror("1");
+
 	FILE* f = fopen(argv[1], "r");
-	perror("1");
 	fp = fopen(argv[2], "w");
-	perror("1");
 	if(!f){
 		perror(argv[1]);
 		return 1;
 	}
-	perror("1");
 	yyrestart(f);
-	perror("1");
 	//yydebug=1;
 	yyparse();
-	perror("2");
+	perror("before Program(root)");
 	Program(root);
-	perror("2");
+	perror("after Program(root)");
+
+	perror("before translate_Program(root)");
 	translate_Program(root);
+	perror("after translate_Program(root)");
 	printIR(head);
 
 	// if(errorNums==0){ //No errors
