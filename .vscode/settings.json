@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "symboltable.h": "c",
+        "type_traits": "c",
+        "limits": "cpp",
+        "typeinfo": "c"
+    }
+}

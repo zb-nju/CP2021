@@ -112,6 +112,7 @@ Type StructSpecifier(Node root){
         newType->u.structure = alreadyDefined->next;
         newNode->type = newType;
         newNode->next = NULL;
+        newNode->op = NULL;
 
         insertIntoSymbolTable(newNode);
 
@@ -202,6 +203,8 @@ TableNode VarDec(Node root, Type type){
         retNode->type = type;
 
         retNode->next = NULL;
+
+        retNode->op = NULL;
     }else{
         //retNode = VarDec(root->firstChild);
 
@@ -226,6 +229,7 @@ void FunDec(Node root, Type returnType){
     TableNode newNode = (TableNode)malloc(sizeof(struct TableNode_));
     strcpy(newNode->name, root->firstChild->val);
     newNode->next = NULL;
+    newNode->op = NULL;
 
     Type newType = (Type)malloc(sizeof(struct Type_));
     newType->kind = FUNCTION;
@@ -303,6 +307,7 @@ void FunDeclare(Node root, Type returnType){
     TableNode newNode = (TableNode)malloc(sizeof(struct TableNode_));
     strcpy(newNode->name, root->firstChild->val);
     newNode->next = NULL;
+    newNode->op = NULL;
 
     Type newType = (Type)malloc(sizeof(struct Type_));
     newType->kind = FUNCTION;

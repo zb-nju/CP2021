@@ -126,7 +126,10 @@ void printIR(InterCode head){
         }
         case DEC_IR:{
             fprintf(fp, "DEC ");
-            printOp(head-Temp
+            printOp(head->u.dec.op);
+            fprintf(fp, " %d", head->u.dec.size);
+            break;
+        }
         case ARG_IR:{
             fprintf(fp, "ARG ");
             printOp(head->u.signleop.op);
@@ -134,7 +137,7 @@ void printIR(InterCode head){
             break;
         }
         case CALL_IR:{
-            printOp(head-Temp>u.assign.left);
+            printOp(head->u.assign.left);
             fprintf(fp, " := CALL ");
             printOp(head->u.assign.right);
             fprintf(fp, "\n");
@@ -182,7 +185,7 @@ void addIR(InterCode code){
 }
 
 InterCode newIR(int kind, ...){
-    InterCode code = (InterCode)malloc(sizeof(InterCode_));
+    InterCode code = (InterCode)malloc(sizeof(struct InterCode_));
     code->kind = kind;
     va_list vaList;
     va_start(vaList, kind);
@@ -239,7 +242,7 @@ InterCode newIR(int kind, ...){
 }
 
 Operand newOperand(int kind, ...){
-    Operand op = (Operand)malloc(sizeof(Operand_));
+    Operand op = (Operand)malloc(sizeof(struct Operand_));
     op->kind = kind;
     va_list vaList;
     va_start(vaList, kind);
@@ -279,7 +282,7 @@ Operand newVariable(){
     variableNums++;
     char tempName[10] = {0};
     sprintf(tempName, "v%d", variableNums);
-    Operand ret = newOperand(TEMP_VAR, tempName);
+    Operand ret = newOperand(VARIABLE, tempName);
     return ret;
 }
 
@@ -295,6 +298,7 @@ Operand newLabel(){
 
 void translate_Program(Node root){
     translate_ExtDefList(root->firstChild);
+    printf("1");
 }
 
 void translate_ExtDefList(Node root){
@@ -410,7 +414,8 @@ void translate_Stmt(Node root){
         addIR(newIR(LABEL_IR, label2));
         translate_Stmt(child->nextBrother->nextBrother->nextBrother->nextBrother->nextBrother->nextBrother);
         addIR(newIR(LABEL_IR, label3));
-        translate_FunDec(secondChild);
+    }
+}
 
 void translate_DefList(Node root){
     if (root == NULL)
@@ -441,26 +446,36 @@ void translate_Dec(Node root){
         translate_Exp(child->nextBrother->nextBrother, t2);
         addIR(newIR(ASSIGN_IR, t1, t2));
     }
-        translate_FunDec(secondChild);
-        place->kind = VARIABLE;
-        strcpy(place->u.value, root->firstChild->val);
+}
+
+void translate_VarDec(Node root, Operand place){
+    Node child = root->firstChild;
+    if(root->childNum == 1){
+        getTableNode(child->val)->op = place;
     }
     else{
         translate_VarDec(child, place);
         int size = atoi(child->nextBrother->nextBrother->val) * 4;
-        addIR(newIR(DEC_IR, place, size)
-        translate_FunDec(secondChild););
+        addIR(newIR(DEC_IR, place, size));
+        place->kind = ADDR_VALUE;
     }
 }
 
 void translate_FunDec(Node root){
     //get function's tablenode
     TableNode tNode = getTableNode(root->firstChild->val);
+    addIR(newIR(FUNCTION_IR, newOperand(FUNCTION_OP, tNode->name)));
+
     FieldList fl = tNode->type->u.function.argv;
     while(fl != NULL){
-        
+        Operand op = newVariable();
+        addIR(newIR(PARAM_IR, op));
+        if(fl->type->kind == STRUCTURE){
+            op->kind = ADDR_VALUE;
+        }
+        getTableNode(fl->name)->op = op;
+        fl = fl->next;
     }
-
 }
 
 void translate_Exp(Node root, Operand place){
@@ -477,8 +492,7 @@ void translate_Exp(Node root, Operand place){
         if(child->name == Node_MINUS){
             translate_Exp_MIUNS(root, place);
         }else if(child->name == Node_NOT){
-            translate_Exp_NOT(root, plac
-        translate_FunDec(secondChild);e);
+            translate_Exp_NOT(root, place);
         }
     }else if(root->childNum == 3){
         if(child->name == Node_Exp){
@@ -510,7 +524,11 @@ void translate_Exp_ASSIGNOP(Node root, Operand place){
     translate_Exp(root->firstChild->nextBrother->nextBrother, t1);
     Operand t2 = newTemp();
     translate_Exp(root->firstChild, t2);
-        translate_FunDec(secondChild);
+    addIR(newIR(ASSIGN_IR, t2, t1));
+}
+
+void translate_Exp_AND_OR(Node root, Operand place){
+    Operand label1 = newLabel();
     Operand label2 = newLabel();
     Operand const_zero = newOperand(CONSTANT, 0);
     addIR(newIR(ASSIGN_IR, place, const_zero));
@@ -661,8 +679,7 @@ void translate_Exp_STRUCT_VISIT(Node root, Operand place){
 void translate_Exp_ID(Node root, Operand place){
     //TODO: May have some problem.
 
-    place->kind = VARIABLE;
-    strcpy(place->u.value, root->firstChild->val);
+    place = getTableNode(root->firstChild->val)->op;
 }
 
 void translate_Exp_INT(Node root, Operand place){

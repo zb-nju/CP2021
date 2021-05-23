@@ -18,19 +18,25 @@ InterCode head = NULL;
 InterCode tail = NULL;
 
 int main(int argc, char** argv) {
+	perror("1");
 	if(argc <= 1) return 1;
+	perror("1");
 	FILE* f = fopen(argv[1], "r");
+	perror("1");
 	fp = fopen(argv[2], "w");
+	perror("1");
 	if(!f){
 		perror(argv[1]);
 		return 1;
 	}
+	perror("1");
 	yyrestart(f);
+	perror("1");
 	//yydebug=1;
 	yyparse();
-
+	perror("2");
 	Program(root);
-
+	perror("2");
 	translate_Program(root);
 	printIR(head);
 

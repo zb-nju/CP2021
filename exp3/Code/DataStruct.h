@@ -7,6 +7,10 @@
 typedef struct Type_* Type;
 typedef struct FieldList_* FieldList;
 typedef struct TableNode_* TableNode;
+typedef struct Operand_* Operand;
+typedef struct InterCode_* InterCode;
+typedef struct Arg_list_* Arg_list;
+
 
 struct Type_
 {
@@ -41,9 +45,34 @@ struct TableNode_
 {
     char name[33];
     Type type;
-    char variable[33];
+    Operand op;
     TableNode next;
 };
 
+struct Operand_{
+    enum { VARIABLE, CONSTANT, ADDRESS, TEMP_VAR, ADDR_VALUE, FUNCTION_OP, LABEL_OP, RELOP_OP } kind;
+    union{
+        int var_no;
+        char value[32];
+    }u;
+};
 
+struct InterCode_{
+    enum { LABEL_IR, FUNCTION_IR, ASSIGN_IR, ADD_IR, SUB_IR, MUL_IR, DIV_IR, GET_ADDR_IR, GET_VALUE_IR, ASSIGN_ADDR_IR,
+            GOTO_IR, RELOP_GOTO_IR, RETURN_IR, DEC_IR, ARG_IR, CALL_IR, PARAM_IR, READ_IR, WRITE_IR} kind;
+    union{
+        struct { Operand right, left;} assign;
+        struct { Operand result, op1, op2;} binop;
+        struct { Operand op;} signleop;
+        struct { Operand x, y, label_z; char relop[32];} if_goto;
+        struct { Operand op; int size;} dec;
+    }u;
+    InterCode prev, next;
+};
+
+
+struct Arg_list_{
+    Operand arg;
+    Arg_list next;
+};
 #endif
