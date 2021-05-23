@@ -9,12 +9,19 @@
 #define DEBUG
 extern TableNode SymbolTable[HASH_TABLE_SIZE];
 
+void addRead(){
+    TableNode newNode = (TableNode)malloc(sizeof(struct TableNode_));
+
+}
+
 
 
 //High-level Definitions
 void Program(Node root){
     #ifdef DEBUG
-        perror("Program");
+        char msg[40];
+        sprintf(msg, "line: %d, Program", root->lineNum);
+        perror(msg);
     #endif
     initSymbolTable();
     ExtDefList(root->firstChild);
@@ -32,18 +39,21 @@ void Program(Node root){
 }
 void ExtDefList(Node root){
     #ifdef DEBUG
-        perror("ExtDefList");
+        char msg[40];
+        sprintf(msg, "line: %d, ExtDefList", root->lineNum);
+        perror(msg);
     #endif
-    if (root == NULL)
+    if (root->childNum == 0)
         return;
-    assert(root->firstChild != NULL);
 
     ExtDef(root->firstChild);
     ExtDefList(root->firstChild->nextBrother);
 }
 void ExtDef(Node root){
     #ifdef DEBUG
-        perror("EctDef");
+        char msg[40];
+        sprintf(msg, "line: %d, ExtDef", root->lineNum);
+        perror(msg);
     #endif
     //ExtDef → Specifier ExtDecList SEMI
     //   | Specifier SEMI
@@ -67,7 +77,9 @@ void ExtDef(Node root){
 }
 void ExtDecList(Node root, Type specifier){
     #ifdef DEBUG
-        perror("ExtDecList");
+        char msg[40];
+        sprintf(msg, "line: %d, ExtDecList", root->lineNum);
+        perror(msg);
     #endif
     //ExtDecList → VarDec
     //   | VarDec COMMA ExtDecList
@@ -84,7 +96,9 @@ void ExtDecList(Node root, Type specifier){
 //Specifiers
 Type Specifier(Node root){
     #ifdef DEBUG
-        perror("Specifier");
+        char msg[40];
+        sprintf(msg, "line: %d, Specifier", root->lineNum);
+        perror(msg);
     #endif
     Node child = root->firstChild;
     if(child->name == Node_TYPE){
@@ -102,7 +116,9 @@ Type Specifier(Node root){
 }
 Type StructSpecifier(Node root){
     #ifdef DEBUG
-        perror("StructSpecifier");
+        char msg[40];
+        sprintf(msg, "line: %d, StructSpecifier", root->lineNum);
+        perror(msg);
     #endif
     //StructSpecifier → STRUCT OptTag LC DefList RC
     //    | STRUCT Tag
@@ -152,13 +168,17 @@ Type StructSpecifier(Node root){
 }
 char* OptTag(Node root){
     #ifdef DEBUG
-        perror("OptTag");
+        char msg[40];
+        sprintf(msg, "line: %d, OptTag", root->lineNum);
+        perror(msg);
     #endif
     return root->firstChild->val;
 }
 char* Tag(Node root){
     #ifdef DEBUG
-        perror("Tag");
+        char msg[40];
+        sprintf(msg, "line: %d, Tag", root->lineNum);
+        perror(msg);
     #endif
     return root->firstChild->val;
 }
@@ -166,9 +186,11 @@ char* Tag(Node root){
 //For struct
 void DefList_Struct(Node root, FieldList alreadyDefined){
     #ifdef DEBUG
-        perror("DefList_Struct");
+        char msg[40];
+        sprintf(msg, "line: %d, DefList_Struct", root->lineNum);
+        perror(msg);
     #endif
-    if (root == NULL)
+    if (root->childNum == 0)
         return;
 
     FieldList def = Def_Struct(root->firstChild);
@@ -195,7 +217,9 @@ void DefList_Struct(Node root, FieldList alreadyDefined){
 }
 FieldList Def_Struct(Node root){
     #ifdef DEBUG
-        perror("Def_Struct");
+        char msg[40];
+        sprintf(msg, "line: %d, Def_Struct", root->lineNum);
+        perror(msg);
     #endif
     Type specifier = Specifier(root->firstChild);
     Node secondChild = root->firstChild->nextBrother;
@@ -203,7 +227,9 @@ FieldList Def_Struct(Node root){
 }
 FieldList DecList_Struct(Node root, Type decType){
     #ifdef DEBUG
-        perror("DecList_Struct");
+        char msg[40];
+        sprintf(msg, "line: %d, DecList_Struct", root->lineNum);
+        perror(msg);
     #endif
     FieldList ret = Dec_Struct(root->firstChild, decType);
     if (root->childNum == 3)
@@ -213,7 +239,9 @@ FieldList DecList_Struct(Node root, Type decType){
 }
 FieldList Dec_Struct(Node root, Type decType){
     #ifdef DEBUG
-        perror("Dec_Struct");
+        char msg[40];
+        sprintf(msg, "line: %d, Dec_Struct", root->lineNum);
+        perror(msg);
     #endif
     FieldList ret=(FieldList)malloc(sizeof(struct FieldList_)); 
     Node child = root->firstChild;
@@ -232,7 +260,9 @@ FieldList Dec_Struct(Node root, Type decType){
 //Declarators
 TableNode VarDec(Node root, Type type){
     #ifdef DEBUG
-        perror("VarDec");
+        char msg[40];
+        sprintf(msg, "line: %d, VarDec", root->lineNum);
+        perror(msg);
     #endif
     // VarDec → ID
     // | VarDec LB INT RB
@@ -251,7 +281,7 @@ TableNode VarDec(Node root, Type type){
         //retNode = VarDec(root->firstChild);
 
         Type newType = (Type)malloc(sizeof(struct Type_));
-        retNode = VarDec(root->firstChild, newType);
+        retNode = VarDec(root->firstChild, type);
         newType->kind = ARRAY;
         newType->u.array.elem = retNode->type;
         if(root->firstChild->nextBrother->nextBrother->name != Node_INT){
@@ -267,7 +297,9 @@ TableNode VarDec(Node root, Type type){
 }
 void FunDec(Node root, Type returnType){
     #ifdef DEBUG
-        perror("FunDec");
+        char msg[40];
+        sprintf(msg, "line: %d, FunDec", root->lineNum);
+        perror(msg);
     #endif
     // FunDec → ID LP VarList RP
     //        | ID LP RP
@@ -323,7 +355,9 @@ void FunDec(Node root, Type returnType){
 }
 FieldList VarList(Node root, Boolean flag){
     #ifdef DEBUG
-        perror("VarList");
+        char msg[40];
+        sprintf(msg, "line: %d, VarList", root->lineNum);
+        perror(msg);
     #endif
     // VarList → ParamDec COMMA VarList
     //         | ParamDec
@@ -335,7 +369,9 @@ FieldList VarList(Node root, Boolean flag){
 }
 FieldList ParamDec(Node root, Boolean flag){
     #ifdef DEBUG
-        perror("ParamDec");
+        char msg[40];
+        sprintf(msg, "line: %d, ParamDec", root->lineNum);
+        perror(msg);
     #endif
     // ParamDec → Specifier VarDec
     Type specifier = Specifier(root->firstChild);
@@ -354,7 +390,9 @@ FieldList ParamDec(Node root, Boolean flag){
 
 void FunDeclare(Node root, Type returnType){
     #ifdef DEBUG
-        perror("FunDeclare");
+        char msg[40];
+        sprintf(msg, "line: %d, FunDeclare", root->lineNum);
+        perror(msg);
     #endif
     // FunDec → ID LP VarList RP
     //        | ID LP RP
@@ -407,12 +445,13 @@ void FunDeclare(Node root, Type returnType){
 //Statements
 void CompSt(Node root, Type returnType){
     #ifdef DEBUG
-        perror("CompSt");
+        char msg[40];
+        sprintf(msg, "line: %d, CompSt", root->lineNum);
+        perror(msg);
     #endif
     // CompSt → LC DefList StmtList RC
-    if (root == NULL)
+    if (root->childNum == 0)
         return;
-    assert(root->firstChild != NULL);
 
     if(root->firstChild->nextBrother->name == Node_DefList){
         DefList(root->firstChild->nextBrother);
@@ -423,11 +462,13 @@ void CompSt(Node root, Type returnType){
 }
 void StmtList(Node root, Type returnType){
     #ifdef DEBUG
-        perror("StmtList");
+        char msg[40];
+        sprintf(msg, "line: %d, StmtList", root->lineNum);
+        perror(msg);
     #endif
     // StmtList → Stmt StmtList
     //          | /*empty*/
-    if (root == NULL)
+    if (root->childNum == 0)
         return;
     if(root->firstChild != NULL){
         Stmt(root->firstChild, returnType);
@@ -437,7 +478,9 @@ void StmtList(Node root, Type returnType){
 }
 void Stmt(Node root, Type returnType){
     #ifdef DEBUG
-        perror("Stmt");
+        char msg[40];
+        sprintf(msg, "line: %d, Stmt", root->lineNum);
+        perror(msg);
     #endif
     // Stmt → Exp SEMI
     //      | CompSt
@@ -486,20 +529,23 @@ void Stmt(Node root, Type returnType){
 //Local Definitions
 void DefList(Node root){
     #ifdef DEBUG
-        perror("DefList");
+        char msg[40];
+        sprintf(msg, "line: %d, DefList", root->lineNum);
+        perror(msg);
     #endif
     // DefList → Def DefList
     //         | /*empty*/
-    if (root == NULL)
+    if (root->childNum == 0)
         return;
-    assert(root->firstChild != NULL);
 
     Def(root->firstChild);
     DefList(root->firstChild->nextBrother);
 }
 void Def(Node root){
     #ifdef DEBUG
-        perror("Def");
+        char msg[40];
+        sprintf(msg, "line: %d, Def", root->lineNum);
+        perror(msg);
     #endif
     // Def → Specifier DecList SEMI
     Type specifier = Specifier(root->firstChild);
@@ -508,7 +554,9 @@ void Def(Node root){
 }
 void DecList(Node root, Type decType){
     #ifdef DEBUG
-        perror("DecList");
+        char msg[40];
+        sprintf(msg, "line: %d, DecList", root->lineNum);
+        perror(msg);
     #endif
     // DecList → Dec
     //         | Dec COMMA DecList
@@ -518,7 +566,9 @@ void DecList(Node root, Type decType){
 }    
 void Dec(Node root, Type decType){
     #ifdef DEBUG
-        perror("Dec");
+        char msg[40];
+        sprintf(msg, "line: %d, Dec", root->lineNum);
+        perror(msg);
     #endif
     // Dec → VarDec
     //     | VarDec ASSIGNOP Exp
@@ -539,8 +589,10 @@ void Dec(Node root, Type decType){
 //Expressions
 Type Exp(Node root){
     #ifdef DEBUG
-        perror("Exp");
-        printf("%d", root->lineNum);
+        char msg[40];
+        sprintf(msg, "line: %d, Exp", root->lineNum);
+        perror(msg);
+        // perror(root->val);
     #endif
     // Exp → Exp ASSIGNOP Exp
     //     | Exp AND Exp
@@ -561,6 +613,15 @@ Type Exp(Node root){
     //     | INT
     //     | FLOAT
     Node child = root->firstChild;
+    // #ifdef DEBUG
+    //     perror(intToString(root->childNum));
+    //     Node t = child;
+    //     while(t){
+    //         perror(t->val);
+    //         perror(intToString(t->childNum));
+    //         t = t->nextBrother;
+    //     }
+    // #endif
     if(root->childNum == 1){
         if(child->name == Node_ID){
             return Exp_ID(root);
@@ -584,8 +645,9 @@ Type Exp(Node root){
                 return Exp_AND_OR(root);
             else if(secondChild->name == Node_DOT)
                 return Exp_STRUCT_VISIT(root);
-            else
+            else{
                 return Exp_RELOP_CAL(root);
+            }
         }else if(child->name == Node_LP){
             return Exp_LPRP(root);
         }else if(child->name == Node_ID){
@@ -602,7 +664,9 @@ Type Exp(Node root){
 }
 void Args(Node root, TableNode tn){
     #ifdef DEBUG
-        perror("Args");
+        char msg[40];
+        sprintf(msg, "line: %d, Args", root->lineNum);
+        perror(msg);
     #endif
     // Args → Exp COMMA Args
     //      | Exp
@@ -613,7 +677,11 @@ void Args(Node root, TableNode tn){
             printf("Error type 9 at Line %d: Function '%s' is not applicable for arguments.\n", root->lineNum, tn->name);
             return;
         }
-        child = child->nextBrother;
+        if(child->nextBrother != NULL){
+            child = child->nextBrother->nextBrother->firstChild;
+        }else{
+            break;
+        }
         argvList = argvList->next;
     }
     if(child != NULL || argvList != NULL){
@@ -624,7 +692,9 @@ void Args(Node root, TableNode tn){
 
 Type Exp_ASSIGNOP(Node root){
     #ifdef DEBUG
-        perror("Exp_ASSIGNOP");
+        char msg[40];
+        sprintf(msg, "line: %d, Exp_ASSIGNOP", root->lineNum);
+        perror(msg);
     #endif
     // Exp → Exp ASSIGNOP Exp
     Node child = root->firstChild;
@@ -635,6 +705,8 @@ Type Exp_ASSIGNOP(Node root){
         return NULL;
     }
     if(judgeType(exp1, exp2)==false){
+        printType(exp1);
+        printType(exp2);
         printf("Error Type 5 at Line %d: Type mismatched for assignment.\n", child->lineNum);
     }
 
@@ -648,7 +720,9 @@ Type Exp_ASSIGNOP(Node root){
 }
 Type Exp_AND_OR(Node root){
     #ifdef DEBUG
-        perror("Exp_AND_OR");
+        char msg[40];
+        sprintf(msg, "line: %d, Exp_AND_OR", root->lineNum);
+        perror(msg);
     #endif
     // Exp → Exp AND Exp
     //     | Exp OR Exp
@@ -664,7 +738,9 @@ Type Exp_AND_OR(Node root){
 }
 Type Exp_RELOP_CAL(Node root){
     #ifdef DEBUG
-        perror("Exp_RELOP_CAL");
+        char msg[40];
+        sprintf(msg, "line: %d, Exp_RELOP_CAL", root->lineNum);
+        perror(msg);
     #endif
     // Exp → Exp RELOP Exp
     //     | Exp PLUS Exp
@@ -686,14 +762,18 @@ Type Exp_RELOP_CAL(Node root){
 }
 Type Exp_LPRP(Node root){
     #ifdef DEBUG
-        perror("Exp_LPRP");
+        char msg[40];
+        sprintf(msg, "line: %d, Exp_LPRP", root->lineNum);
+        perror(msg);
     #endif
     // Exp → LP Exp RP
-    return Exp(root->firstChild);
+    return Exp(root->firstChild->nextBrother);
 }
 Type Exp_MIUNS(Node root){
     #ifdef DEBUG
-        perror("Exp_MINUS");
+        char msg[40];
+        sprintf(msg, "line: %d, Exp_MIUNS", root->lineNum);
+        perror(msg);
     #endif
     // Exp → MINUS Exp
     Node child = root->firstChild;
@@ -707,7 +787,9 @@ Type Exp_MIUNS(Node root){
 }
 Type Exp_NOT(Node root){
     #ifdef DEBUG
-        perror("Exp_NOT");
+        char msg[40];
+        sprintf(msg, "line: %d, Exp_NOT", root->lineNum);
+        perror(msg);
     #endif
     // Exp → NOT Exp
     Node child = root->firstChild;
@@ -721,7 +803,9 @@ Type Exp_NOT(Node root){
 }
 Type Exp_FUNCTION_CALL(Node root){
     #ifdef DEBUG
-        perror("Exp_FUNCTION_CALL");
+        char msg[40];
+        sprintf(msg, "line: %d, Exp_FUNCTION_CALL", root->lineNum);
+        perror(msg);
     #endif
     // Exp → ID LP Args RP
     //     | ID LP RP
@@ -746,7 +830,9 @@ Type Exp_FUNCTION_CALL(Node root){
 }
 Type Exp_ARRAY_VISIT(Node root){
     #ifdef DEBUG
-        perror("Exp_ARRAY_VISIT");
+        char msg[40];
+        sprintf(msg, "line: %d, Exp_ARRAY_VISIT", root->lineNum);
+        perror(msg);
     #endif
     // Exp → Exp LB Exp RB
     Type array = Exp(root->firstChild);
@@ -764,7 +850,9 @@ Type Exp_ARRAY_VISIT(Node root){
 }
 Type Exp_STRUCT_VISIT(Node root){
     #ifdef DEBUG
-        perror("Exp_STRUCT_VISIT");
+        char msg[40];
+        sprintf(msg, "line: %d, Exp_STRUCT_VISIT", root->lineNum);
+        perror(msg);
     #endif
     // Exp → Exp DOT ID
     Type s = Exp(root->firstChild);
@@ -791,7 +879,9 @@ Type Exp_STRUCT_VISIT(Node root){
 }
 Type Exp_ID(Node root){
     #ifdef DEBUG
-        perror("Exp_ID");
+        char msg[40];
+        sprintf(msg, "line: %d, Exp_ID", root->lineNum);
+        perror(msg);
     #endif
     // Exp → ID
     Boolean exist = checkSymbolByName(root->firstChild->val);
@@ -811,7 +901,9 @@ Type Exp_ID(Node root){
 }
 Type Exp_INT(Node root){
     #ifdef DEBUG
-        perror("Exp_INT");
+        char msg[40];
+        sprintf(msg, "line: %d, Exp_INT", root->lineNum);
+        perror(msg);
     #endif
     // Exp → INT
     Type type = (Type)malloc(sizeof(struct Type_));
@@ -821,7 +913,9 @@ Type Exp_INT(Node root){
 }
 Type Exp_FLOAT(Node root){
     #ifdef DEBUG
-        perror("Exp_FLOAT");
+        char msg[40];
+        sprintf(msg, "line: %d, Exp_FLOAT", root->lineNum);
+        perror(msg);
     #endif
     // Exp → FLOAT
     Type type = (Type)malloc(sizeof(struct Type_));

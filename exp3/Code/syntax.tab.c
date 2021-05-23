@@ -1492,7 +1492,7 @@ yyreduce:
 
   case 4:
 #line 47 "./syntax.y" /* yacc.c:1646  */
-    { (yyval.pnode) = NULL; }
+    { (yyval.pnode) = createNode((yyloc).first_line, Node_ExtDefList, "", false, 0); }
 #line 1497 "./syntax.tab.c" /* yacc.c:1646  */
     break;
 
@@ -1570,7 +1570,7 @@ yyreduce:
 
   case 17:
 #line 67 "./syntax.y" /* yacc.c:1646  */
-    { (yyval.pnode) = NULL;}
+    { (yyval.pnode) = createNode((yyloc).first_line, Node_OptTag, "", false, 0);}
 #line 1575 "./syntax.tab.c" /* yacc.c:1646  */
     break;
 
@@ -1666,7 +1666,7 @@ yyreduce:
 
   case 33:
 #line 94 "./syntax.y" /* yacc.c:1646  */
-    { (yyval.pnode) = NULL; }
+    { (yyval.pnode) = createNode((yyloc).first_line, Node_StmtList, "", false, 0); }
 #line 1671 "./syntax.tab.c" /* yacc.c:1646  */
     break;
 
@@ -1720,7 +1720,7 @@ yyreduce:
 
   case 42:
 #line 109 "./syntax.y" /* yacc.c:1646  */
-    { (yyval.pnode) = NULL; }
+    { (yyval.pnode) = createNode((yyloc).first_line, Node_DefList, "", false, 0); }
 #line 1725 "./syntax.tab.c" /* yacc.c:1646  */
     break;
 

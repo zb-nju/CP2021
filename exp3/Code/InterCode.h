@@ -9,6 +9,7 @@ void printIR(InterCode head);       // 打印中间代码
 void addIR(InterCode code);         // 向双向链表中添加一条中间代码
 InterCode newIR(int kind, ...);     // 构造一条中间代码
 Operand newOperand(int kind, ...);  // 构造一个操作数
+Operand deepCopyOperand(Operand op);//
 Operand newTemp();                  // 生成一个临时变量
 Operand newLabel();                 // 生成一个label
 
@@ -36,7 +37,7 @@ void translate_DecList_Struct(Node root, Type decType);
 void translate_Dec_Struct(Node root, Type decType);
 
 //Declarators
-void translate_VarDec(Node root, Operand place);
+void translate_VarDec(Node root, Operand place, int size);
 void translate_FunDec(Node root);
 void translate_VarList(Node root, Boolean flag);
 void translate_ParamDec(Node root, Boolean flag);
@@ -49,12 +50,12 @@ void translate_Stmt(Node root);
 //Local Definitions
 void translate_DefList(Node root);
 void translate_Def(Node root);
-void translate_DecList(Node root);
-void translate_Dec(Node root);
+void translate_DecList(Node root, int size);
+void translate_Dec(Node root, int size);
 
 //Expressions
 void translate_Exp(Node root, Operand place);
-void translate_Args(Node root, Arg_list arg_list);
+void translate_Args(Node root, Arg_list *arg_list);
 
 void translate_Exp_ASSIGNOP(Node root, Operand place);
 void translate_Exp_AND_OR(Node root, Operand place);

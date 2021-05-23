@@ -44,7 +44,7 @@
 Program : ExtDefList                            { $$ = createNode(@$.first_line, Node_Program, "", false, 1, $1); root = $$; }
     ;
 ExtDefList : ExtDef ExtDefList                  { $$ = createNode(@$.first_line, Node_ExtDefList, "", false, 2, $1, $2); }
-    | /* empty */                               { $$ = NULL; }
+    | /* empty */                               { $$ = createNode(@$.first_line, Node_ExtDefList, "", false, 0); }
     ;
 ExtDef : Specifier ExtDecList SEMI              { $$ = createNode(@$.first_line, Node_ExtDef, "", false, 3, $1, $2, $3); }
     | Specifier SEMI                            { $$ = createNode(@$.first_line, Node_ExtDef, "", false, 2, $1, $2); }
@@ -64,7 +64,7 @@ StructSpecifier : STRUCT OptTag LC DefList RC   { $$ = createNode(@$.first_line,
     | STRUCT Tag                                { $$ = createNode(@$.first_line, Node_StructSpecifier, "", false, 2, $1, $2); }
     ;
 OptTag : ID                                     { $$ = createNode(@$.first_line, Node_OptTag, "", false, 1, $1); }
-    | /* empty */                               { $$ = NULL;}
+    | /* empty */                               { $$ = createNode(@$.first_line, Node_OptTag, "", false, 0);}
     ;
 Tag : ID                                        { $$ = createNode(@$.first_line, Node_Tag, "", false, 1, $1); }
     ;
@@ -91,7 +91,7 @@ CompSt : LC DefList StmtList RC                 { $$ = createNode(@$.first_line,
     | LC error RC                               { errorNums++; printf("Error type B at Line %d: Syntax error.\n", yylineno); }
     ;
 StmtList : Stmt StmtList                        { $$ = createNode(@$.first_line, Node_StmtList, "", false, 2, $1, $2); }
-    | /* empty */                               { $$ = NULL; }
+    | /* empty */                               { $$ = createNode(@$.first_line, Node_StmtList, "", false, 0); }
     ;
 Stmt : Exp SEMI                                 { $$ = createNode(@$.first_line, Node_Stmt, "", false, 2, $1, $2); }
     //| error '\n'                              { errorNums++; printf("Error type B at Line %d: Syntax error.\n", yylineno); }
@@ -106,7 +106,7 @@ Stmt : Exp SEMI                                 { $$ = createNode(@$.first_line,
 
 
 DefList : Def DefList                           { $$ = createNode(@$.first_line, Node_DefList, "", false, 2, $1, $2); }
-    | /* empty */                               { $$ = NULL; }
+    | /* empty */                               { $$ = createNode(@$.first_line, Node_DefList, "", false, 0); }
     ;
 Def : Specifier DecList SEMI                    { $$ = createNode(@$.first_line, Node_Def, "", false, 3, $1, $2, $3); }
     | STAR DIV                                  { errorNums++; printf("Error type B at Line %d: Syntax error.\n", yylineno); }
