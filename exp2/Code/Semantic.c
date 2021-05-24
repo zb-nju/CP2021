@@ -206,7 +206,7 @@ TableNode VarDec(Node root, Type type){
         //retNode = VarDec(root->firstChild);
 
         Type newType = (Type)malloc(sizeof(struct Type_));
-        retNode = VarDec(root->firstChild, newType);
+        retNode = VarDec(root->firstChild, type);
         newType->kind = ARRAY;
         newType->u.array.elem = retNode->type;
         if(root->firstChild->nextBrother->nextBrother->name != Node_INT){

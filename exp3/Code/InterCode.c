@@ -17,6 +17,7 @@ int variableNums = 0;
 int arrayNums = 0;
 int structNums = 0;
 int labelNums = 0;
+FieldList lastField;
 
 void printOp(Operand op){
     switch (op->kind)
@@ -382,7 +383,6 @@ void translate_Cond(Node root, Operand label_true, Operand label_false){
         Operand t2 = newTemp();
         translate_Exp(child, t1);
         translate_Exp(child->nextBrother->nextBrother, t2);
-        // TODO: t1->kind == ADDRESS_OP?   t2->kind == ADDRESS_OP?
         addIR(newIR(RELOP_GOTO_IR, t1, child->nextBrother->val, t2, label_true));
         addIR(newIR(GOTO_IR, label_false));
     }
@@ -404,7 +404,6 @@ void translate_Cond(Node root, Operand label_true, Operand label_false){
     else{
         Operand t1 = newTemp();
         translate_Exp(root, t1);
-        // TODO: t1->kind == ADDRESS_OP?
         Operand const_zero = newOperand(CONSTANT_OP, 0);
         addIR(newIR(RELOP_GOTO_IR, t1, "!=", const_zero, label_true));
         addIR(newIR(GOTO_IR, label_false));
@@ -508,10 +507,10 @@ void translate_Def(Node root){
         perror(msg);
     #endif
     Node child = root->firstChild;
-    int size = translate_Specifier(child);
+    //int size = translate_Specifier(child);
 
     Node secondChild = root->firstChild->nextBrother;
-    translate_DecList(secondChild, size);
+    translate_DecList(secondChild);
 }
 
 int translate_Specifier(Node root){
@@ -523,31 +522,35 @@ int translate_Specifier(Node root){
     int ret = -1;
 }
 
-int getSizeFromStructureSpecifier(Node node){
-    int ret = 0;
-    char* id = node->firstChild->nextBrother->firstChild->val;
-    perror(id);
-    TableNode tNode = getTableNode(id);
-    FieldList fl = tNode->type->u.structure;
-    while(fl != NULL){
-        ret += 4;
-        fl = fl->next;
+int getSize(Type type){
+    if(type->kind == BASIC){
+        return 4;
     }
-    perror(intToString(ret));
-    return ret;
+    else if(type->kind == ARRAY){
+        return type->u.array.size * getSize(type->u.array.elem);
+    }
+    else if(type->kind == STRUCTURE){
+        int ret = 0;
+        FieldList tmp = type->u.structure;
+        while(tmp != NULL){
+            ret += getSize(tmp->type);
+            tmp = tmp->next;
+        }
+        return ret;
+    }
 }
 
-void translate_DecList(Node root, int size){
+void translate_DecList(Node root){
     #ifdef DEBUG
         char msg[40];
         sprintf(msg, "line: %d, translate_DecList", root->lineNum);
         perror(msg);
     #endif
-    translate_Dec(root->firstChild, size);
+    translate_Dec(root->firstChild);
     if (root->childNum == 3)
-        translate_DecList(root->firstChild->nextBrother->nextBrother, size);
+        translate_DecList(root->firstChild->nextBrother->nextBrother);
 }
-void translate_Dec(Node root, int size){
+void translate_Dec(Node root){
     #ifdef DEBUG
         char msg[40];
         sprintf(msg, "line: %d, translate_Dec", root->lineNum);
@@ -556,17 +559,17 @@ void translate_Dec(Node root, int size){
     Node child = root->firstChild;
     Operand v1 = newVariable();
     if (root->childNum == 1){
-        translate_VarDec(child, v1, size);  //TODO
+        translate_VarDec(child, v1);  //TODO
     }
     else if (root->childNum == 3){
-        translate_VarDec(child, v1, size);
+        translate_VarDec(child, v1);
         Operand t2 = newTemp();
         translate_Exp(child->nextBrother->nextBrother, t2);
         addIR(newIR(ASSIGN_IR, v1, t2));
     }
 }
 
-void translate_VarDec(Node root, Operand place, int size){
+void translate_VarDec(Node root, Operand place){
     #ifdef DEBUG
         char msg[40];
         sprintf(msg, "line: %d, translate_VarDec", root->lineNum);
@@ -575,13 +578,14 @@ void translate_VarDec(Node root, Operand place, int size){
     Node child = root->firstChild;
     if(root->childNum == 1){
         getTableNode(child->val)->op = place;
-        if(size != -1){
+        if(getTableNode(child->val)->type->kind == STRUCTURE){
+            int size = getSize(getTableNode(child->val)->type);
             addIR(newIR(DEC_IR, place, size));
             place->kind = STRUCT_OP;
         }
     }
     else{
-        translate_VarDec(child, place, size);
+        translate_VarDec(child, place);
         int arrSize = atoi(child->nextBrother->nextBrother->val) * 4;
         addIR(newIR(DEC_IR, place, arrSize));
         place->kind = ARRAY_OP;
@@ -904,7 +908,23 @@ void translate_Exp_STRUCT_VISIT(Node root, Operand place){
     //get field name and store
     char* fieldName = child->nextBrother->nextBrother->val;
     //look up symbol table and get offset
-    int offset = lookUpStructField(structName, fieldName);
+    //int offset = lookUpStructField(structName, fieldName);
+    //perror(intToString(offset));
+    int offset = 0;
+    FieldList field;
+    if(!strcmp(structName,"")){
+        field = lastField;
+    }else{
+        field = getTableNode(structName)->type->u.structure;
+    }
+    while(field != NULL){
+        if(!strcmp(field->name,fieldName)){ 
+            lastField = field;
+            break; 
+        }
+        offset += getSize(field->type);
+        field = field->next;
+    }
     perror(intToString(offset));
 
     addIR(newIR(ADD_IR, place, t1, newOperand(CONSTANT_OP, offset)));
