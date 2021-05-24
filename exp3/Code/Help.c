@@ -1,6 +1,7 @@
 #include"Help.h"
 #include"MyEnum.h"
 #include"stdio.h"
+#include<assert.h>
 #include<string.h>
 #include<stdlib.h>
 
@@ -64,10 +65,10 @@ void printType(Type t){
         switch (t->u.basic)
         {
         case Type_INT:
-            printf("int/n");
+            printf("int\n");
             break;
         case Type_FLOAT:
-            printf("float/n");
+            printf("float\n");
             break;
         default:
             break;
@@ -78,12 +79,13 @@ void printType(Type t){
         printType(t->u.array.elem);
         break;
     case STRUCTURE:
-        printf("structure/n");
+        printf("structure\n");
         break;
     case FUNCTION:
-        printf("function/n");
+        printf("function\n");
         break;
     default:
         break;
     }
 }
+

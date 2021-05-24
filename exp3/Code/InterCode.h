@@ -11,7 +11,8 @@ InterCode newIR(int kind, ...);     // 构造一条中间代码
 Operand newOperand(int kind, ...);  // 构造一个操作数
 Operand deepCopyOperand(Operand op);//
 Operand newTemp();                  // 生成一个临时变量
-Operand newLabel();                 // 生成一个label
+Operand newLabel();                 // 生成一个labelint
+int getSizeFromStructureSpecifier(Node node);
 
 
 void translate_Cond(Node root, Operand label_true, Operand label_false);

@@ -6,12 +6,59 @@
 #include "Help.h"
 #include <string.h>
 
-#define DEBUG
+// #define DEBUG
 extern TableNode SymbolTable[HASH_TABLE_SIZE];
 
 void addRead(){
     TableNode newNode = (TableNode)malloc(sizeof(struct TableNode_));
+    strcpy(newNode->name, "read");
 
+    Type type = (Type)malloc(sizeof(struct Type_));
+    type->kind = FUNCTION;
+
+    Type retType = (Type)malloc(sizeof(struct Type_));
+    retType->kind = BASIC;
+    retType->u.basic = Type_INT;
+
+    type->u.function.returnType = retType;
+    type->u.function.argc = 0;
+    type->u.function.line = -1;
+    type->u.function.argv = NULL;
+    type->u.function.decFlag = true;
+
+    newNode->type = type;
+
+    assert(insertIntoSymbolTable(newNode));
+}
+
+void addWrite(){
+    TableNode newNode = (TableNode)malloc(sizeof(struct TableNode_));
+    strcpy(newNode->name, "write");
+
+    Type type = (Type)malloc(sizeof(struct Type_));
+    type->kind = FUNCTION;
+
+    Type retType = (Type)malloc(sizeof(struct Type_));
+    retType->kind = BASIC;
+    retType->u.basic = Type_INT;
+
+    type->u.function.returnType = retType;
+    type->u.function.argc = 1;
+    type->u.function.line = -1;
+    type->u.function.decFlag = true;
+
+    FieldList fl = (FieldList)malloc(sizeof(struct FieldList_));
+    Type argType = (Type)malloc(sizeof(struct Type_));
+    argType->kind = BASIC;
+    argType->u.basic = Type_INT;
+    fl->type = argType;
+    fl->next = NULL;
+
+    type->u.function.argv = fl;
+
+    newNode->type = type;
+
+    assert(insertIntoSymbolTable(newNode));
 }
 
 
@@ -23,7 +70,10 @@ void Program(Node root){
         sprintf(msg, "line: %d, Program", root->lineNum);
         perror(msg);
     #endif
+
     initSymbolTable();
+    addRead();
+    addWrite();
     ExtDefList(root->firstChild);
 
     // 判断是否有只声明无定义的函数
@@ -489,7 +539,9 @@ void Stmt(Node root, Type returnType){
     //      | IF LP Exp RP Stmt ELSE Stmt
     //      | WHILE LP Exp RP Stmt
     Node child = root->firstChild;
+    perror(NodeNameToString(child->name));
     if(child->name == Node_Exp){
+        perror("here");
         Exp(child);
     }else if(child->name == Node_CompSt){
         CompSt(child, returnType);
@@ -673,18 +725,21 @@ void Args(Node root, TableNode tn){
     FieldList argvList = tn->type->u.function.argv;
     Node child = root->firstChild;
     while(child != NULL && argvList != NULL){
+        printType(Exp(child));
+        printType(argvList->type);
         if(judgeType(Exp(child), argvList->type) == false){
             printf("Error type 9 at Line %d: Function '%s' is not applicable for arguments.\n", root->lineNum, tn->name);
             return;
         }
+        argvList = argvList->next;
         if(child->nextBrother != NULL){
             child = child->nextBrother->nextBrother->firstChild;
         }else{
             break;
         }
-        argvList = argvList->next;
     }
-    if(child != NULL || argvList != NULL){
+
+    if(child->nextBrother != NULL || argvList != NULL){
         printf("Error type 9 at Line %d: Function '%s' is not applicable for arguments.\n", root->lineNum, tn->name);
     }
     return;
@@ -810,6 +865,7 @@ Type Exp_FUNCTION_CALL(Node root){
     // Exp → ID LP Args RP
     //     | ID LP RP
     //char* id_name = root->firstChild->val;
+    perror(root->firstChild->val);
     Boolean exist = checkSymbolByName(root->firstChild->val);
     if(exist == false){
         printf("Error type 2 at Line %d: Undefined function '%s'.\n", root->lineNum, root->firstChild->val);

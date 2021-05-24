@@ -450,7 +450,8 @@ void translate_Stmt(Node root){
     #endif
     Node child = root->firstChild;
     if(child->name == Node_Exp){
-        translate_Exp(child, NULL);
+        Operand t1 = newTemp();
+        translate_Exp(child, t1);
     }else if(child->name == Node_CompSt){
         translate_CompSt(child);
     }else if(child->name == Node_RETURN){
@@ -507,14 +508,19 @@ void translate_Def(Node root){
         perror(msg);
     #endif
     Node child = root->firstChild;
-    int size = -1;
-    if(child->firstChild->name == Node_StructSpecifier){
-        size = getSizeFromStructureSpecifier(child->firstChild);
-    }
-
+    int size = translate_Specifier(child);
 
     Node secondChild = root->firstChild->nextBrother;
     translate_DecList(secondChild, size);
+}
+
+int translate_Specifier(Node root){
+    #ifdef DEBUG
+        char msg[40];
+        sprintf(msg, "line: %d, translate_Specifier", root->lineNum);
+        perror(msg);
+    #endif
+    int ret = -1;
 }
 
 int getSizeFromStructureSpecifier(Node node){
@@ -821,6 +827,7 @@ void translate_Exp_FUNCTION_CALL(Node root, Operand place){
         }
         while (arg_list != NULL)
         {
+            perror("here");
             Operand arg = arg_list->arg;
             // 传引用
             if(arg->kind == STRUCT_OP || arg->kind == ARRAY_OP)
@@ -830,7 +837,10 @@ void translate_Exp_FUNCTION_CALL(Node root, Operand place){
             arg_list = arg_list->next;
         }
         Operand funcOp = newOperand(FUNCTION_OP, function);
+            perror("here");
+            assert(place != NULL);
         addIR(newIR(CALL_IR, place, funcOp));
+            perror("here");
         return;
     }
 }
@@ -859,11 +869,13 @@ void translate_Exp_ARRAY_VISIT(Node root, Operand place){
     translate_Exp(child->nextBrother->nextBrother, t2);
     if(t2->kind == CONSTANT_OP){
         t2->u.var_no *= 4;
+        addIR(newIR(ADD_IR, place, t1, t2));
     }
     else{
-        addIR(newIR(MUL_IR, t2, newOperand(CONSTANT_OP, 4), t2));
+        Operand t3 = newTemp();
+        addIR(newIR(MUL_IR, t3, newOperand(CONSTANT_OP, 4), t2));
+        addIR(newIR(ADD_IR, place, t1, t3));
     }
-    addIR(newIR(ADD_IR, place, t1, t2));
     place->kind = VALUE_ADDR_OP;
 }
 
