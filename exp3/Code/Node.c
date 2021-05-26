@@ -20,6 +20,7 @@ Node createNode(int lineNum, NodeName name, char* val, int isToken,  int childNu
 
     newNode->firstChild = NULL;
     newNode->nextBrother = NULL;
+    newNode->type = NULL;
 
     if(childNum == 5 && newNode->name == Node_StructSpecifier){
         va_list ap;

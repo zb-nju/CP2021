@@ -6,6 +6,7 @@
 #include"string.h"
 #include"assert.h"
 #include"stdarg.h"
+#include"DataStruct.h"
 
 #include"MyEnum.h"
 
@@ -17,6 +18,7 @@ struct Node_{
     int isToken;
     int lineNum;
     int childNum;
+    Type type;
 
     Node firstChild;
     Node nextBrother;

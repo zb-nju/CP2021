@@ -3,6 +3,8 @@
         "symboltable.h": "c",
         "type_traits": "c",
         "limits": "cpp",
-        "typeinfo": "c"
+        "typeinfo": "c",
+        "string.h": "c",
+        "cmath": "c"
     }
 }

@@ -50,6 +50,8 @@ Boolean checkSymbolByName(const char* const name){
 }
 
 TableNode getTableNode(const char* const name){
+    if(name == NULL)
+        return NULL;
     int hashVal = hash(name);
     TableNode tNode = SymbolTable[hashVal];
     while(tNode != NULL){

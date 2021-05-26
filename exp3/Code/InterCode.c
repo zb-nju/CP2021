@@ -2,6 +2,7 @@
 #include "SymbolTable.h"
 #include "Help.h"
 #include "MyEnum.h"
+#include "Semantic.h"
 #include<stdlib.h>
 #include<stdio.h>
 #include<stdarg.h>
@@ -369,8 +370,6 @@ void translate_ExtDef(Node root){
     }
 }
 
-
-
 void translate_Cond(Node root, Operand label_true, Operand label_false){
     #ifdef DEBUG
         char msg[40];
@@ -513,6 +512,12 @@ void translate_Def(Node root){
 }
 
 int getSize(Type type){
+    #ifdef DEBUG
+        char msg[40];
+        sprintf(msg, "getSize");
+        perror(msg);
+    #endif
+    assert(type!=NULL);
     if(type->kind == BASIC){
         return 4;
     }
@@ -634,17 +639,24 @@ void translate_Exp(Node root, Operand place){
         }else if(child->name == Node_NOT){
             translate_Exp_NOT(root, place);
         }
+        lastField = NULL;
     }else if(root->childNum == 3){
         if(child->name == Node_Exp){
             Node secondChild = child->nextBrother;
-            if(secondChild->name == Node_ASSIGNOP)
+            if(secondChild->name == Node_ASSIGNOP){
                 translate_Exp_ASSIGNOP(root, place);
-            else if(secondChild->name == Node_AND || secondChild->name == Node_OR)
+                lastField = NULL;
+            }
+            else if(secondChild->name == Node_AND || secondChild->name == Node_OR){
                 translate_Exp_AND_OR(root, place);
+                lastField = NULL;
+            }
             else if(secondChild->name == Node_DOT)
                 translate_Exp_STRUCT_VISIT(root, place);
-            else
+            else{
                 translate_Exp_RELOP_CAL(root, place);
+                lastField = NULL;
+            }
         }else if(child->name == Node_LP){
             translate_Exp_LPRP(root, place);
         }else if(child->name == Node_ID){
@@ -710,22 +722,44 @@ void translate_Exp_RELOP_CAL(Node root, Operand place){
         Operand t2 = newTemp();
         translate_Exp(root->firstChild, t1);
         translate_Exp(root->firstChild->nextBrother->nextBrother, t2);
-        switch (root->firstChild->nextBrother->name)
-        {
-        case Node_PLUS:
-            addIR(newIR(ADD_IR, place, t1, t2));
-            break;
-        case Node_MINUS:
-            addIR(newIR(SUB_IR, place, t1, t2));
-            break;
-        case Node_STAR:
-            addIR(newIR(MUL_IR, place, t1, t2));
-            break;
-        case Node_DIV:
-            addIR(newIR(DIV_IR, place, t1, t2));
-            break;
-        default:
-            break;
+        if(t1->kind == CONSTANT_OP && t2->kind == CONSTANT_OP){
+            place->kind = CONSTANT_OP;
+            switch (root->firstChild->nextBrother->name)
+            {
+            case Node_PLUS:
+                place->u.var_no = t1->u.var_no + t2->u.var_no;
+                break;
+            case Node_MINUS:
+                place->u.var_no = t1->u.var_no - t2->u.var_no;
+                break;
+            case Node_STAR:
+                place->u.var_no = t1->u.var_no * t2->u.var_no;
+                break;
+            case Node_DIV:
+                place->u.var_no = t1->u.var_no / t2->u.var_no;
+                break;
+            default:
+                break;
+            }
+        }
+        else{
+            switch (root->firstChild->nextBrother->name)
+            {
+            case Node_PLUS:
+                addIR(newIR(ADD_IR, place, t1, t2));
+                break;
+            case Node_MINUS:
+                addIR(newIR(SUB_IR, place, t1, t2));
+                break;
+            case Node_STAR:
+                addIR(newIR(MUL_IR, place, t1, t2));
+                break;
+            case Node_DIV:
+                addIR(newIR(DIV_IR, place, t1, t2));
+                break;
+            default:
+                break;
+            }
         }
     }
 }
@@ -745,7 +779,6 @@ void translate_Exp_MIUNS(Node root, Operand place){
         sprintf(msg, "line: %d, translate_Exp_MIUNS", root->lineNum);
         perror(msg);
     #endif
-    
     Operand t1 = newTemp();
     translate_Exp(root->firstChild->nextBrother, t1);
     Operand t2 = newOperand(CONSTANT_OP, 0);
@@ -821,7 +854,6 @@ void translate_Exp_FUNCTION_CALL(Node root, Operand place){
         }
         while (arg_list != NULL)
         {
-            perror("here");
             Operand arg = arg_list->arg;
             // 传引用
             if(arg->kind == STRUCT_OP || arg->kind == ARRAY_OP)
@@ -831,10 +863,7 @@ void translate_Exp_FUNCTION_CALL(Node root, Operand place){
             arg_list = arg_list->next;
         }
         Operand funcOp = newOperand(FUNCTION_OP, function);
-            perror("here");
-            assert(place != NULL);
         addIR(newIR(CALL_IR, place, funcOp));
-            perror("here");
         return;
     }
 }
@@ -861,16 +890,24 @@ void translate_Exp_ARRAY_VISIT(Node root, Operand place){
     }
     // 下标
     translate_Exp(child->nextBrother->nextBrother, t2);
+    Type exp = Exp(child);
+    int size = getSize(exp->u.array.elem);
     if(t2->kind == CONSTANT_OP){
-        t2->u.var_no *= 4;
+        t2->u.var_no *= size;
         addIR(newIR(ADD_IR, place, t1, t2));
     }
     else{
         Operand t3 = newTemp();
-        addIR(newIR(MUL_IR, t3, newOperand(CONSTANT_OP, 4), t2));
+        addIR(newIR(MUL_IR, t3, newOperand(CONSTANT_OP, size), t2));
         addIR(newIR(ADD_IR, place, t1, t3));
     }
-    place->kind = VALUE_ADDR_OP;
+    if(exp->u.array.elem->kind == STRUCTURE){
+        place->kind = STRUCT_ADDR_OP;
+    }
+    else{
+        place->kind = VALUE_ADDR_OP;
+    }
+    perror("finish array");
 }
 
 void translate_Exp_STRUCT_VISIT(Node root, Operand place){
@@ -894,31 +931,64 @@ void translate_Exp_STRUCT_VISIT(Node root, Operand place){
         t1->kind = ADDRESS_OP;
     }
 
-    char* structName = child->firstChild->val;
+    char* structName;
+    FieldList field;
+    if(child->firstChild->name == Node_ID){
+        structName = child->firstChild->val;
+        field = getTableNode(structName)->type->u.structure;
+    }
+    else{
+        field = child->firstChild->type->u.array.elem->u.structure;
+        // perror(NodeNameToString( child->firstChild->name));
+        // printType(child->firstChild->type);
+        // structName = child->firstChild->firstChild->val;
+        // perror(structName);
+        // perror("here");
+        // if(structName != NULL){
+        //     TableNode t = getTableNode(structName);
+        //     perror("here");
+        //     if(t != NULL && t->type->kind == ARRAY){
+        //         field = t->type->u.array.elem->u.structure;
+        //     }
+        // }
+        // else
+        // perror("here");
+    }
+    // perror(structName);
+    // if(structName == NULL){
+    //     field = lastField;
+    // }
     //get field name and store
     char* fieldName = child->nextBrother->nextBrother->val;
+    // perror(fieldName);
     //look up symbol table and get offset
     //int offset = lookUpStructField(structName, fieldName);
     //perror(intToString(offset));
     int offset = 0;
-    FieldList field;
-    if(!strcmp(structName,"")){
-        field = lastField;
-    }else{
-        field = getTableNode(structName)->type->u.structure;
-    }
     while(field != NULL){
-        if(!strcmp(field->name,fieldName)){ 
+        if(!strcmp(field->name,fieldName)){
             lastField = field;
-            break; 
+            break;
         }
+        // perror(field->name);
+        // perror(fieldName);
+        assert(field!=NULL);
         offset += getSize(field->type);
         field = field->next;
     }
-    perror(intToString(offset));
+    // perror(intToString(offset));
 
     addIR(newIR(ADD_IR, place, t1, newOperand(CONSTANT_OP, offset)));
-    place->kind = VALUE_ADDR_OP;
+    if(field->type->kind == ARRAY){
+        place->kind = ARRAY_ADDR_OP;
+    }
+    else if(field->type->kind == STRUCTURE){
+        place->kind = STRUCT_ADDR_OP;
+    }
+    else{
+        place->kind = VALUE_ADDR_OP;
+    }
+    perror("finish struct");
 }
 
 void translate_Exp_ID(Node root, Operand place){

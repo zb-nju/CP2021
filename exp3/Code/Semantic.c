@@ -6,7 +6,7 @@
 #include "Help.h"
 #include <string.h>
 
-// #define DEBUG
+#define DEBUG
 extern TableNode SymbolTable[HASH_TABLE_SIZE];
 
 void addRead(){
@@ -539,14 +539,15 @@ void Stmt(Node root, Type returnType){
     //      | IF LP Exp RP Stmt ELSE Stmt
     //      | WHILE LP Exp RP Stmt
     Node child = root->firstChild;
-    perror(NodeNameToString(child->name));
+    // perror(NodeNameToString(child->name));
     if(child->name == Node_Exp){
-        perror("here");
-        Exp(child);
+        // perror("here");
+        child->type = Exp(child);
     }else if(child->name == Node_CompSt){
         CompSt(child, returnType);
     }else if(child->name == Node_RETURN){
         Type ret = Exp(child->nextBrother);
+        child->nextBrother->type = ret;
         // Error type 8
         if(judgeType(ret, returnType)==false)
         {
@@ -554,6 +555,7 @@ void Stmt(Node root, Type returnType){
         }
     }else if(child->name == Node_WHILE){
         Type t = Exp(child->nextBrother->nextBrother);
+        child->nextBrother->nextBrother->type = t;
         if(t!=NULL && (t->kind != BASIC || t->u.basic != Type_INT))
         {
             printf("Other error type at line %d: the condition in WHILE is not Type_INT.\n", child->lineNum);
@@ -561,6 +563,7 @@ void Stmt(Node root, Type returnType){
         Stmt(child->nextBrother->nextBrother->nextBrother->nextBrother, returnType);
     }else if(root->childNum == 5){
         Type t = Exp(child->nextBrother->nextBrother);
+        child->nextBrother->nextBrother->type = t;
         if(t!=NULL && (t->kind != BASIC || t->u.basic != Type_INT))
         {
             printf("Other error type at line %d: the condition in IF is not Type_INT.\n", child->lineNum);
@@ -568,6 +571,7 @@ void Stmt(Node root, Type returnType){
         Stmt(child->nextBrother->nextBrother->nextBrother->nextBrother, returnType);
     }else{
         Type t = Exp(child->nextBrother->nextBrother);
+        child->nextBrother->nextBrother->type = t;
         if(t!=NULL && (t->kind != BASIC || t->u.basic != Type_INT))
         {
             printf("Other error type at line %d: the condition in IF is not Type_INT.\n", child->lineNum);
@@ -632,6 +636,7 @@ void Dec(Node root, Type decType){
     }
     if (root->childNum == 3){
         Type t = Exp(child->nextBrother->nextBrother);
+        child->nextBrother->nextBrother->type = t;
         if(judgeType(decType, t)==false){
             printf("Error Type 5 at Line %d: Type mismatched for assignment.\n", child->lineNum);
         }
@@ -676,40 +681,69 @@ Type Exp(Node root){
     // #endif
     if(root->childNum == 1){
         if(child->name == Node_ID){
-            return Exp_ID(root);
+            Type t = Exp_ID(root);
+            root->type = t;
+            return t;
         }else if(child->name == Node_INT){
-            return Exp_INT(child);
+            Type t = Exp_INT(root);
+            root->type = t;
+            return t;
         }else if(child->name == Node_FLOAT){
-            return Exp_FLOAT(child);
+            Type t = Exp_FLOAT(root);
+            root->type = t;
+            return t;
         }
     }else if(root->childNum == 2){
         if(child->name == Node_MINUS){
-            return Exp_MIUNS(root);
+            Type t = Exp_MIUNS(root);
+            root->type = t;
+            return t;
         }else if(child->name == Node_NOT){
-            return Exp_NOT(root);
+            Type t = Exp_NOT(root);
+            root->type = t;
+            return t;
         }
     }else if(root->childNum == 3){
         if(child->name == Node_Exp){
             Node secondChild = child->nextBrother;
-            if(secondChild->name == Node_ASSIGNOP)
-                return Exp_ASSIGNOP(root);
-            else if(secondChild->name == Node_AND || secondChild->name == Node_OR)
-                return Exp_AND_OR(root);
-            else if(secondChild->name == Node_DOT)
-                return Exp_STRUCT_VISIT(root);
+            if(secondChild->name == Node_ASSIGNOP){
+                Type t = Exp_ASSIGNOP(root);
+                root->type = t;
+                return t;
+            }
+            else if(secondChild->name == Node_AND || secondChild->name == Node_OR){
+                Type t = Exp_AND_OR(root);
+                root->type = t;
+                return t;
+            }
+            else if(secondChild->name == Node_DOT){
+                Type t = Exp_STRUCT_VISIT(root);
+                root->type = t;
+                return t;
+            }
             else{
-                return Exp_RELOP_CAL(root);
+                Type t = Exp_RELOP_CAL(root);
+                root->type = t;
+                return t;
             }
         }else if(child->name == Node_LP){
-            return Exp_LPRP(root);
+            Type t = Exp_LPRP(root);
+            root->type = t;
+            return t;
         }else if(child->name == Node_ID){
-            return Exp_FUNCTION_CALL(root);
+            Type t = Exp_FUNCTION_CALL(root);
+            root->type = t;
+            return t;
         }
     }else{
         if(child->name == Node_ID){
-            return Exp_FUNCTION_CALL(root);
+            Type t = Exp_FUNCTION_CALL(root);
+            root->type = t;
+            return t;
         }else if(child->name == Node_Exp){
-            return Exp_ARRAY_VISIT(root);
+            Type t = Exp_ARRAY_VISIT(root);
+            root->type = t;
+            return t;
         }
     }
 
@@ -725,9 +759,11 @@ void Args(Node root, TableNode tn){
     FieldList argvList = tn->type->u.function.argv;
     Node child = root->firstChild;
     while(child != NULL && argvList != NULL){
-        printType(Exp(child));
+        Type t = Exp(child);
+        child->type = t;
+        printType(t);
         printType(argvList->type);
-        if(judgeType(Exp(child), argvList->type) == false){
+        if(judgeType(t, argvList->type) == false){
             printf("Error type 9 at Line %d: Function '%s' is not applicable for arguments.\n", root->lineNum, tn->name);
             return;
         }
@@ -754,7 +790,9 @@ Type Exp_ASSIGNOP(Node root){
     // Exp → Exp ASSIGNOP Exp
     Node child = root->firstChild;
     Type exp1 = Exp(child);
+    child->type = exp1;
     Type exp2 = Exp(child->nextBrother->nextBrother);
+    child->nextBrother->nextBrother->type = exp2;
 
     if(exp1==NULL || exp2==NULL){
         return NULL;
@@ -784,6 +822,9 @@ Type Exp_AND_OR(Node root){
     Node child = root->firstChild;
     Type exp1 = Exp(child);
     Type exp2 = Exp(child->nextBrother->nextBrother);
+    child->type = exp1;
+    child->nextBrother->nextBrother->type = exp2;
+
 
     if(exp1->kind!=BASIC || exp1->u.basic!=Type_INT || judgeType(exp1, exp2)==false){
         printf("Error type 7 at Line %d: Type mismatched for operands.\n", child->lineNum);
@@ -805,6 +846,8 @@ Type Exp_RELOP_CAL(Node root){
     Node child = root->firstChild;
     Type exp1 = Exp(child);
     Type exp2 = Exp(child->nextBrother->nextBrother);
+    child->type = exp1;
+    child->nextBrother->nextBrother->type = exp2;
     if(exp1 == NULL){
         return NULL;
     }
@@ -822,7 +865,9 @@ Type Exp_LPRP(Node root){
         perror(msg);
     #endif
     // Exp → LP Exp RP
-    return Exp(root->firstChild->nextBrother);
+    Type t = Exp(root->firstChild->nextBrother);
+    root->firstChild->nextBrother->type = t;
+    return t;
 }
 Type Exp_MIUNS(Node root){
     #ifdef DEBUG
@@ -833,6 +878,7 @@ Type Exp_MIUNS(Node root){
     // Exp → MINUS Exp
     Node child = root->firstChild;
     Type exp1 = Exp(child->nextBrother);
+    child->nextBrother->type = exp1;
 
     if(exp1->kind!=BASIC){
         printf("Error type 7 at Line %d: Type mismatched for operands.\n", child->lineNum);
@@ -849,6 +895,7 @@ Type Exp_NOT(Node root){
     // Exp → NOT Exp
     Node child = root->firstChild;
     Type exp1 = Exp(child->nextBrother);
+    child->nextBrother->type = exp1;
 
     if(exp1->kind!=BASIC || exp1->u.basic!=Type_INT){
         printf("Error type 7 at Line %d: Type mismatched for operands.\n", child->lineNum);
@@ -865,7 +912,7 @@ Type Exp_FUNCTION_CALL(Node root){
     // Exp → ID LP Args RP
     //     | ID LP RP
     //char* id_name = root->firstChild->val;
-    perror(root->firstChild->val);
+    // perror(root->firstChild->val);
     Boolean exist = checkSymbolByName(root->firstChild->val);
     if(exist == false){
         printf("Error type 2 at Line %d: Undefined function '%s'.\n", root->lineNum, root->firstChild->val);
@@ -893,6 +940,8 @@ Type Exp_ARRAY_VISIT(Node root){
     // Exp → Exp LB Exp RB
     Type array = Exp(root->firstChild);
     Type index = Exp(root->firstChild->nextBrother->nextBrother);
+    root->firstChild->type = array;
+    root->firstChild->nextBrother->nextBrother->type = index;
 
     if(array->kind!=ARRAY){
         printf("Error Type 10 at Line %d: Not an array before [  ].\n", root->lineNum);
@@ -912,6 +961,7 @@ Type Exp_STRUCT_VISIT(Node root){
     #endif
     // Exp → Exp DOT ID
     Type s = Exp(root->firstChild);
+    root->firstChild->type = s;
 
     if(s->kind!=STRUCTURE){
         printf("Error type 13 at Line %d: Illegal use of '.'.\n", root->lineNum);
