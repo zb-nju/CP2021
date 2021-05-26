@@ -507,19 +507,9 @@ void translate_Def(Node root){
         perror(msg);
     #endif
     Node child = root->firstChild;
-    //int size = translate_Specifier(child);
 
     Node secondChild = root->firstChild->nextBrother;
     translate_DecList(secondChild);
-}
-
-int translate_Specifier(Node root){
-    #ifdef DEBUG
-        char msg[40];
-        sprintf(msg, "line: %d, translate_Specifier", root->lineNum);
-        perror(msg);
-    #endif
-    int ret = -1;
 }
 
 int getSize(Type type){
@@ -585,8 +575,8 @@ void translate_VarDec(Node root, Operand place){
         }
     }
     else{
-        translate_VarDec(child, place);
-        int arrSize = atoi(child->nextBrother->nextBrother->val) * 4;
+        getTableNode(child->firstChild->val)->op = place;
+        int arrSize = getSize(getTableNode(child->firstChild->val)->type);
         addIR(newIR(DEC_IR, place, arrSize));
         place->kind = ARRAY_OP;
     }
