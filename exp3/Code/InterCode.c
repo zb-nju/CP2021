@@ -645,17 +645,14 @@ void translate_Exp(Node root, Operand place){
             Node secondChild = child->nextBrother;
             if(secondChild->name == Node_ASSIGNOP){
                 translate_Exp_ASSIGNOP(root, place);
-                lastField = NULL;
             }
             else if(secondChild->name == Node_AND || secondChild->name == Node_OR){
                 translate_Exp_AND_OR(root, place);
-                lastField = NULL;
             }
             else if(secondChild->name == Node_DOT)
                 translate_Exp_STRUCT_VISIT(root, place);
             else{
                 translate_Exp_RELOP_CAL(root, place);
-                lastField = NULL;
             }
         }else if(child->name == Node_LP){
             translate_Exp_LPRP(root, place);
@@ -678,10 +675,10 @@ void translate_Exp_ASSIGNOP(Node root, Operand place){
         perror(msg);
     #endif
     Operand t1 = newTemp();
+    translate_Exp(root->firstChild, t1);
+    // Operand t1 = newTemp();
     translate_Exp(root->firstChild->nextBrother->nextBrother, t1);
-    Operand t2 = newTemp();
-    translate_Exp(root->firstChild, t2);
-    addIR(newIR(ASSIGN_IR, t2, t1));
+    // addIR(newIR(ASSIGN_IR, t2, t1));
 }
 
 void translate_Exp_AND_OR(Node root, Operand place){
@@ -939,44 +936,18 @@ void translate_Exp_STRUCT_VISIT(Node root, Operand place){
     }
     else{
         field = child->firstChild->type->u.array.elem->u.structure;
-        // perror(NodeNameToString( child->firstChild->name));
-        // printType(child->firstChild->type);
-        // structName = child->firstChild->firstChild->val;
-        // perror(structName);
-        // perror("here");
-        // if(structName != NULL){
-        //     TableNode t = getTableNode(structName);
-        //     perror("here");
-        //     if(t != NULL && t->type->kind == ARRAY){
-        //         field = t->type->u.array.elem->u.structure;
-        //     }
-        // }
-        // else
-        // perror("here");
     }
-    // perror(structName);
-    // if(structName == NULL){
-    //     field = lastField;
-    // }
-    //get field name and store
     char* fieldName = child->nextBrother->nextBrother->val;
-    // perror(fieldName);
-    //look up symbol table and get offset
-    //int offset = lookUpStructField(structName, fieldName);
-    //perror(intToString(offset));
     int offset = 0;
     while(field != NULL){
         if(!strcmp(field->name,fieldName)){
             lastField = field;
             break;
         }
-        // perror(field->name);
-        // perror(fieldName);
         assert(field!=NULL);
         offset += getSize(field->type);
         field = field->next;
     }
-    // perror(intToString(offset));
 
     addIR(newIR(ADD_IR, place, t1, newOperand(CONSTANT_OP, offset)));
     if(field->type->kind == ARRAY){
