@@ -733,7 +733,11 @@ void translate_Exp_RELOP_CAL(Node root, Operand place){
                 place->u.var_no = t1->u.var_no * t2->u.var_no;
                 break;
             case Node_DIV:
+<<<<<<< HEAD
+                // place->u.var_no = t1->u.var_no / t2->u.var_no;
+=======
                 // 除法定义不同，不可再直接计算
+>>>>>>> b118fd67dc940220ba219284afc24f35ae07bcb1
                 addIR(newIR(DIV_IR, place, t1, t2));
                 break;
             default:
