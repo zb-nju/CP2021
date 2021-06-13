@@ -675,10 +675,10 @@ void translate_Exp_ASSIGNOP(Node root, Operand place){
         perror(msg);
     #endif
     Operand t1 = newTemp();
-    translate_Exp(root->firstChild, t1);
-    // Operand t1 = newTemp();
     translate_Exp(root->firstChild->nextBrother->nextBrother, t1);
-    // addIR(newIR(ASSIGN_IR, t2, t1));
+    Operand t2 = newTemp();
+    translate_Exp(root->firstChild, t2);
+    addIR(newIR(ASSIGN_IR, t2, t1));
 }
 
 void translate_Exp_AND_OR(Node root, Operand place){
