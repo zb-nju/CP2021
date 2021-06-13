@@ -51,19 +51,17 @@ void OCMain(InterCode head){
         case DEC_IR:{
             break;
         }
-        case ARG_IR:{
-            break;
-        }
-        case CALL_IR:{
+        
+        case ARG_IR: case CALL_IR: case READ_IR: {
+            OCCall(head);
+            while(head->kind != CALL_IR && head->kind != READ_IR)
+                head = head->next;
             break;
         }
         case PARAM_IR:{
             break;
         }
-        case READ_IR:{
-            OCRead(head);
-            break;
-        }
+        //没有返回值，特殊处理
         case WRITE_IR:{
             OCWrite(head);
             break;
@@ -142,12 +140,28 @@ void OCReturn(InterCode head){
     freeRegs();
 }
 
-void OCRead(InterCode head){
-
+void OCCall(InterCode head){
+    int offset = 0;
+    while(head->kind == ARG_IR){
+        offset += 4;
+        fprintf(fp, "addi $sp, $sp, -4\n");
+        int regNo = loadReg(head->u.signleop.op);
+        fprintf(fp, "sw %s, 0($sp)\n", regs[regNo].name);
+        regs[regNo].free = 0;
+        head = head->next;
+    }
+    fprintf(fp, "jal %s\n", head->u.assign.right->u.value);
+    fprintf(fp, "addi $sp, $sp, %d\n", offset);
+    int regNo = loadReg(head->u.assign.left);
+    fprintf(fp, "move %s, $v0\n", regs[regNo].name);
+    writeMemory(regNo);
 }
 
 void OCWrite(InterCode head){
-
+    int regNo = loadReg(head->u.signleop.op);
+    fprintf(fp, "move $a0, %s\n", regs[regNo].name);
+    fprintf(fp, "jal write\n");
+    freeRegs();
 }
 
 void OCFunction(InterCode head){
