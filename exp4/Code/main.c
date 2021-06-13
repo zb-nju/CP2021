@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
 	yyrestart(f);
 	//yydebug=1;
 	yyparse();
-	printTree(root, 0);
+	// printTree(root, 0);
 	Program(root);
 	translate_Program(root);
 	// printIR(head);

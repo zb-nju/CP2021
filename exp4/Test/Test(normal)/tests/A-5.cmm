@@ -1,12 +1,12 @@
-int add(int ai, int aj) {
+int ADD(int ai, int aj) {
     return ai + aj;
 }
 
-int sub(int si, int sj) {
+int SUB(int si, int sj) {
     return si - sj;
 }
 
-int mul(int mi, int mj) {
+int MUL(int mi, int mj) {
     return mi * mj;
 }
 
@@ -16,7 +16,7 @@ int main() {
     j = read();
     k = read();
     l = read();
-    res = add(mul(sub(i, j), sub(i, j)), add(k, l));
+    res = ADD(MUL(SUB(i, j), SUB(i, j)), ADD(k, l));
     write(res);
     return 0;
 }

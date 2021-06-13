@@ -167,11 +167,11 @@ void OCReturn(InterCode head){
     fprintf(fp, "lw $ra, 4($fp)\n");
     // 恢复栈指针
     fprintf(fp, "addi $sp, $fp, 8\n");
+    int regNo = loadReg(head->u.signleop.op);
+    fprintf(fp, "move $v0, %s\n", regs[regNo].name);
     // 恢复帧指针
     fprintf(fp, "lw $fp, 0($fp)\n");
 
-    int regNo = loadReg(head->u.signleop.op);
-    fprintf(fp, "move $v0, %s\n", regs[regNo].name);
     fprintf(fp, "jr $ra\n");
     freeRegs();
 }
@@ -193,8 +193,8 @@ void OCCall(InterCode head){
     }
     fprintf(fp, "jal %s\n", head->u.assign.right->u.value);
     fprintf(fp, "addi $sp, $sp, %d\n", offset);
-    perror(intToString(callnum));
-    perror(head->u.assign.right->u.value);
+    // perror(intToString(callnum));
+    // perror(head->u.assign.right->u.value);
     int regNo = loadReg(head->u.assign.left);
     fprintf(fp, "move %s, $v0\n", regs[regNo].name);
     writeMemory(regNo);
@@ -392,13 +392,13 @@ int loadReg(Operand op){
             regs[i].free = 1;
             switch (op->kind){
                 case CONSTANT_OP:{
-                    perror("1");
+                    // perror("1");
                     regs[i].var = NULL;
                     fprintf(fp, "li %s, %d\n", regs[i].name, op->u.var_no);
                     return i;
                 }
                 case ADDRESS_OP:{
-                    perror("2");
+                    // perror("2");
                     Var var = getVar(op);
                     regs[i].var = var;
                     var->regNo = i;
@@ -406,7 +406,7 @@ int loadReg(Operand op){
                     return i;
                 }
                 case VALUE_ADDR_OP:{
-                    perror("3");
+                    // perror("3");
                     Var var = getVar(op);
                     regs[i].var = var;
                     var->regNo = i;
@@ -415,7 +415,7 @@ int loadReg(Operand op){
                     return i;
                 }
                 default:{
-                    perror("4");
+                    // perror("4");
                     Var var = getVar(op);
                     regs[i].var = var;
                     var->regNo = i;
@@ -448,8 +448,12 @@ void writeMemory(int regNo){
     #ifdef DEBUG
         perror("writeMemory");
     #endif
+    perror("here");
+    assert(regs[regNo].var!=NULL);
     fprintf(fp, "sw %s, %d($fp)\n", regs[regNo].name, regs[regNo].var->offset);
+    perror("here");
     freeRegs();
+    perror("here");
 }
 
 void freeRegs(){

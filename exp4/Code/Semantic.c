@@ -760,8 +760,8 @@ void Args(Node root, TableNode tn){
     while(child != NULL && argvList != NULL){
         Type t = Exp(child);
         child->type = t;
-        printType(t);
-        printType(argvList->type);
+        // printType(t);
+        // printType(argvList->type);
         if(judgeType(t, argvList->type) == false){
             printf("Error type 9 at Line %d: Function '%s' is not applicable for arguments.\n", root->lineNum, tn->name);
             return;
@@ -797,8 +797,8 @@ Type Exp_ASSIGNOP(Node root){
         return NULL;
     }
     if(judgeType(exp1, exp2)==false){
-        printType(exp1);
-        printType(exp2);
+        // printType(exp1);
+        // printType(exp2);
         printf("Error Type 5 at Line %d: Type mismatched for assignment.\n", child->lineNum);
     }
 
