@@ -1,5 +1,6 @@
 #include<stdio.h>
 #include"ObjectCode.h"
+#include"Help.h"
 #include"SymbolTable.h"
 #include<assert.h>
 #include<stdlib.h>
@@ -53,7 +54,7 @@ void OCMain(InterCode head){
         case DEC_IR:{
             break;
         }
-        case ARG_IR: case CALL_IR: case READ_IR: {
+        case ARG_IR: case CALL_IR:{
             OCCall(head);
             while(head->kind != CALL_IR && head->kind != READ_IR)
                 head = head->next;
@@ -62,9 +63,12 @@ void OCMain(InterCode head){
         case PARAM_IR:{
             break;
         }
-        //没有返回值，特殊处理
         case WRITE_IR:{
             OCWrite(head);
+            break;
+        }
+        case READ_IR:{
+            OCRead(head);
             break;
         }
         default:
@@ -162,7 +166,7 @@ void OCReturn(InterCode head){
     // 写入返回地址
     fprintf(fp, "lw $ra, 4($fp)\n");
     // 恢复栈指针
-    fprintf(fp, "addi $ra, $fp, 8\n");
+    fprintf(fp, "addi $sp, $fp, 8\n");
     // 恢复帧指针
     fprintf(fp, "lw $fp, 0($fp)\n");
 
@@ -171,11 +175,13 @@ void OCReturn(InterCode head){
     fprintf(fp, "jr $ra\n");
     freeRegs();
 }
+int callnum = 0;
 
 void OCCall(InterCode head){
     #ifdef DEBUG
         perror("OCCall");
     #endif
+    callnum++;
     int offset = 0;
     while(head->kind == ARG_IR){
         offset += 4;
@@ -187,7 +193,19 @@ void OCCall(InterCode head){
     }
     fprintf(fp, "jal %s\n", head->u.assign.right->u.value);
     fprintf(fp, "addi $sp, $sp, %d\n", offset);
+    perror(intToString(callnum));
+    perror(head->u.assign.right->u.value);
     int regNo = loadReg(head->u.assign.left);
+    fprintf(fp, "move %s, $v0\n", regs[regNo].name);
+    writeMemory(regNo);
+}
+
+void OCRead(InterCode head){
+    #ifdef DEBUG
+        perror("OCRead");
+    #endif
+    fprintf(fp, "jal read\n");
+    int regNo = loadReg(head->u.signleop.op);
     fprintf(fp, "move %s, $v0\n", regs[regNo].name);
     writeMemory(regNo);
 }
@@ -368,16 +386,19 @@ int loadReg(Operand op){
     #ifdef DEBUG
         perror("loadReg");
     #endif
+    assert(op!=NULL);
     for(int i = 8; i < 16; i++){
         if(regs[i].free == 0){
             regs[i].free = 1;
             switch (op->kind){
                 case CONSTANT_OP:{
+                    perror("1");
                     regs[i].var = NULL;
-                    fprintf(fp, "li %s, %d", regs[i].name, op->u.var_no);
+                    fprintf(fp, "li %s, %d\n", regs[i].name, op->u.var_no);
                     return i;
                 }
                 case ADDRESS_OP:{
+                    perror("2");
                     Var var = getVar(op);
                     regs[i].var = var;
                     var->regNo = i;
@@ -385,6 +406,7 @@ int loadReg(Operand op){
                     return i;
                 }
                 case VALUE_ADDR_OP:{
+                    perror("3");
                     Var var = getVar(op);
                     regs[i].var = var;
                     var->regNo = i;
@@ -393,6 +415,7 @@ int loadReg(Operand op){
                     return i;
                 }
                 default:{
+                    perror("4");
                     Var var = getVar(op);
                     regs[i].var = var;
                     var->regNo = i;
