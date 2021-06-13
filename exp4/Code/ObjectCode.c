@@ -1,11 +1,14 @@
 #include<stdio.h>
 #include"ObjectCode.h"
-#include"DataStruct.h"
 #include"SymbolTable.h"
+#include<assert.h>
+#include<stdlib.h>
+#include<string.h>
 
-extern fp* fp;
+extern FILE* fp;
 Register regs[32];
 Var varList;
+int func_offset;
 
 void OCMain(InterCode head){
     varList = NULL;
@@ -75,13 +78,32 @@ void OCMain(InterCode head){
 }
 
 void OCAssign(InterCode head){
-
+    int rightReg = loadReg(head->u.assign.right);
+    int leftReg = 8;
+    if(head->u.assign.left->kind == VALUE_ADDR_OP){
+        while(regs[leftReg].free == 1 && leftReg < 16){
+            leftReg++;
+        }
+        if(leftReg == 16){
+            perror("No free reg left\n");
+            assert(0);
+        }
+        regs[leftReg].free = 1;
+        Var leftVar = getVar(head->u.assign.left);
+        fprintf(fp, "lw %s, %d($fp)\n", regs[leftReg].name, leftVar->offset);
+        fprintf(fp, "sw %s, 0(%s)\n", regs[rightReg].name, regs[leftReg].name);
+    }else{
+        leftReg = loadReg(head->u.assign.right);
+        fprintf(fp, "move %s, %s\n",  regs[leftReg].name, regs[rightReg].name);
+        writeMemory(leftReg);
+    }
+    freeRegs();
 }
 
 void OCCal(InterCode head){
-    int resReg = getReg(head->u.binop.result);
-    int op1Reg = getReg(head->u.binop.op1);
-    int op2Reg = getReg(head->u.binop.op2);
+    int resReg = loadReg(head->u.binop.result);
+    int op1Reg = loadReg(head->u.binop.op1);
+    int op2Reg = loadReg(head->u.binop.op2);
     switch (head->kind)
     {
     case ADD_IR:
@@ -99,12 +121,12 @@ void OCCal(InterCode head){
     default:
         break;
     }
-    writeMemory();
+    writeMemory(resReg);
 }
 
 void OCRelopGoto(InterCode head){
-    int xRegNo = getReg(head->u.if_goto.x);
-    int yRegNo = getReg(head->u.if_goto.y);
+    int xRegNo = loadReg(head->u.if_goto.x);
+    int yRegNo = loadReg(head->u.if_goto.y);
     if(strcmp(head->u.if_goto.relop, "==") == 0){
         fprintf(fp, "beq %s, %s, %s\n", regs[xRegNo].name, regs[yRegNo].name, head->u.if_goto.label_z->u.value);
     }
@@ -164,8 +186,89 @@ void OCWrite(InterCode head){
     freeRegs();
 }
 
-void OCFunction(InterCode head){
+void handle_val(Operand op){
+    if(op->kind == CONSTANT_OP){
+        return;
+    }
+    if(getVar(op) == NULL){
+        func_offset += 4;
+        Var tmp=(Var)malloc(sizeof(struct Var_));
+        strcpy(tmp->name, op->u.value);
+        tmp->offset = (-1)*func_offset;
 
+        tmp->next = varList;
+        varList = tmp;
+    }
+}
+
+void OCFunction(InterCode head){
+    fprintf(fp, "\n%s:\n", head->u.signleop.op->u.value);
+    fprintf(fp, "addi $sp, $sp, -8\n");
+    fprintf(fp, "sw $fp, 0($sp)\n");
+    fprintf(fp, "sw $ra, 4($sp)\n");
+    fprintf(fp, "move $fp, $sp\n");
+    func_offset = 0;
+    int count = 0; //第几个参数
+    head = head->next;
+    while(head->kind == PARAM_IR){
+        Var param=(Var)malloc(sizeof(struct Var_));
+        strcpy(param->name, head->u.signleop.op->u.value);
+        param->offset = 8 + count*4;
+
+        // 将这个参数加到varlist中
+        param->next = varList;
+        varList = param;
+        
+        count++;
+        head = head->next;
+    }
+
+    // 处理函数中出现的变量
+    InterCode tmp = head;
+    while(tmp != NULL && tmp->kind != FUNCTION_IR){
+        switch (tmp->kind)
+        {
+        case ASSIGN_IR:{
+            handle_val(tmp->u.assign.left);
+            handle_val(tmp->u.assign.right);
+            break;
+        }
+        case ADD_IR: case SUB_IR: case MUL_IR: case DIV_IR:{
+            handle_val(tmp->u.binop.result);
+            handle_val(tmp->u.binop.op1);
+            handle_val(tmp->u.binop.op2);
+            break;
+        }
+        case DEC_IR:{
+            func_offset += tmp->u.dec.size;
+            Var dec_var=(Var)malloc(sizeof(struct Var_));
+            strcpy(dec_var->name, tmp->u.dec.op->u.value);
+            dec_var->offset = (-1)*func_offset;
+            dec_var->next = varList;
+            varList = dec_var;
+            break;
+        }
+        case CALL_IR:{
+            handle_val(tmp->u.assign.left);
+            break;
+        }
+        case ARG_IR: case WRITE_IR: case READ_IR:{
+            handle_val(tmp->u.signleop.op);
+            break;
+        }
+        case RELOP_GOTO_IR:{
+            handle_val(tmp->u.if_goto.x);
+            handle_val(tmp->u.if_goto.y);
+            break;
+        }
+        default:
+            break;
+        }
+        tmp = tmp->next;
+    }
+    
+    fprintf(fp, "addi $sp, $sp, %d\n", (-1)*func_offset);
+    freeRegs();
 }
 
 void initRegs(){
@@ -233,30 +336,35 @@ void OCHeader(){
     fprintf(fp, "jr $ra\n");
 }
 
-void loadReg(Operand op){
+int loadReg(Operand op){
     for(int i = 8; i < 16; i++){
         if(regs[i].free == 0){
             regs[i].free = 1;
             switch (op->kind){
-                case CONSTANT_OP:
-                    regs[i].node = NULL;
+                case CONSTANT_OP:{
+                    regs[i].var = NULL;
                     fprintf(fp, "li %s, %d", regs[i].name, op->u.var_no);
                     return i;
-                case ADDRESS_OP:
-                    Var var = getVar(op->u.value);
+                }
+                case ADDRESS_OP:{
+                    Var var = getVar(op);
                     regs[i].var = var;
                     var->regNo = i;
                     fprintf(fp, "addi %s, $fp, %d\n", regs[i].name, var->offset);
                     return i;
-                case VALUE_ADDR_OP:
-                    Var var = getVar(op->u.value);
+                }
+                case VALUE_ADDR_OP:{
+                    Var var = getVar(op);
                     regs[i].var = var;
                     var->regNo = i;
                     fprintf(fp, "lw %s, %d($fp)\n", regs[i].name, var->offset);
                     fprintf(fp, "lw %s, 0(%s)\n", regs[i].name, regs[i].name);
                     return i;
-                default:
-                    perror("operand no solve:");
+                }
+                default:{
+                    perror("operand no solve");
+                    printf("value: %s    kind: %d\n", op->u.value ,op->kind);
+                }
             }
         }
     }
@@ -272,12 +380,12 @@ Var getVar(Operand op){
         }
         cur=cur->next;
     }
-    assert(ans != null);
+    // assert(ans != NULL);
     return ans;
 }
 
 void writeMemory(int regNo){
-    fprintf(fp, "sw %s, %d($fp)\n", regs[regNo].name, regs[regNo].node->offset);
+    fprintf(fp, "sw %s, %d($fp)\n", regs[regNo].name, regs[regNo].var->offset);
     freeRegs();
 }
 

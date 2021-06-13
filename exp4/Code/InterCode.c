@@ -8,7 +8,7 @@
 #include<stdarg.h>
 #include<string.h>
 
-#define DEBUG
+// #define DEBUG
 
 extern FILE* fp;
 extern InterCode head;

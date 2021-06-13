@@ -4,6 +4,7 @@
 #include"syntax.tab.h"
 #include"Semantic.h"
 #include"InterCode.h"
+#include"ObjectCode.h"
 
 
 extern void yyrestart(FILE *);
@@ -33,7 +34,8 @@ int main(int argc, char** argv) {
 	printTree(root, 0);
 	Program(root);
 	translate_Program(root);
-	printIR(head);
+	// printIR(head);
+	OCMain(head);
 
 	return 0;
 }

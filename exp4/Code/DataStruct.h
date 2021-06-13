@@ -155,12 +155,12 @@ struct Var_
     Var next;
 };
 
-struct Register
+typedef struct Register
 {
     char name[32];
     int free;
     Var var;
-};
+}Register;
 
 
 #endif

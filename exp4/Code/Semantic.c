@@ -6,7 +6,7 @@
 #include "Help.h"
 #include <string.h>
 
-#define DEBUG
+// #define DEBUG
 extern TableNode SymbolTable[HASH_TABLE_SIZE];
 
 void addRead(){
