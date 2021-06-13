@@ -720,24 +720,22 @@ void translate_Exp_RELOP_CAL(Node root, Operand place){
         translate_Exp(root->firstChild, t1);
         translate_Exp(root->firstChild->nextBrother->nextBrother, t2);
         if(t1->kind == CONSTANT_OP && t2->kind == CONSTANT_OP){
-            place->kind = CONSTANT_OP;
             switch (root->firstChild->nextBrother->name)
             {
             case Node_PLUS:
+                place->kind = CONSTANT_OP;
                 place->u.var_no = t1->u.var_no + t2->u.var_no;
                 break;
             case Node_MINUS:
+                place->kind = CONSTANT_OP;
                 place->u.var_no = t1->u.var_no - t2->u.var_no;
                 break;
             case Node_STAR:
+                place->kind = CONSTANT_OP;
                 place->u.var_no = t1->u.var_no * t2->u.var_no;
                 break;
             case Node_DIV:
-<<<<<<< HEAD
-                // place->u.var_no = t1->u.var_no / t2->u.var_no;
-=======
                 // 除法定义不同，不可再直接计算
->>>>>>> b118fd67dc940220ba219284afc24f35ae07bcb1
                 addIR(newIR(DIV_IR, place, t1, t2));
                 break;
             default:

@@ -10,7 +10,6 @@ void OCReturn(InterCode head);
 void OCCall(InterCode head);
 void OCRead(InterCode head);
 void OCWrite(InterCode head);
-void OCRead(InterCode head);
 void handle_val(Operand op);
 void OCFunction(InterCode head);
 void initRegs();

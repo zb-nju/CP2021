@@ -55,7 +55,7 @@ void OCMain(InterCode head){
         case DEC_IR:{
             break;
         }
-        case ARG_IR: case CALL_IR: {
+        case ARG_IR: case CALL_IR:{
             OCCall(head);
             while(head->kind != CALL_IR && head->kind != READ_IR)
                 head = head->next;
@@ -113,6 +113,9 @@ void OCCal(InterCode head){
     int resReg = loadReg(head->u.binop.result);
     int op1Reg = loadReg(head->u.binop.op1);
     int op2Reg = loadReg(head->u.binop.op2);
+    perror(intToString(resReg));
+    perror(intToString(op1Reg));
+    perror(intToString(op2Reg));
     switch (head->kind)
     {
     case ADD_IR:
@@ -169,10 +172,10 @@ void OCReturn(InterCode head){
     // 恢复栈指针
     fprintf(fp, "addi $sp, $fp, 8\n");
     int regNo = loadReg(head->u.signleop.op);
-    fprintf(fp, "move $v0, %s\n", regs[regNo].name);
     // 恢复帧指针
     fprintf(fp, "lw $fp, 0($fp)\n");
 
+    fprintf(fp, "move $v0, %s\n", regs[regNo].name);
     fprintf(fp, "jr $ra\n");
     freeRegs();
 }
@@ -219,13 +222,6 @@ void OCWrite(InterCode head){
     fprintf(fp, "move $a0, %s\n", regs[regNo].name);
     fprintf(fp, "jal write\n");
     freeRegs();
-}
-
-void OCRead(InterCode head){
-    fprintf(fp, "jal read\n");
-    int regNo = loadReg(head->u.signleop.op);
-    fprintf(fp, "move %s, $v0\n", regs[regNo].name);
-    writeMemory(regNo);
 }
 
 void handle_val(Operand op){
@@ -423,11 +419,16 @@ int loadReg(Operand op){
                     return i;
                 }
                 default:{
-                    // perror("4");
                     Var var = getVar(op);
-                    regs[i].var = var;
-                    var->regNo = i;
-                    fprintf(fp, "lw %s, %d($fp)\n",regs[i].name, var->offset);
+                    if(var == NULL){
+                        regs[i].var = NULL;
+                        fprintf(fp, "li %s, %d", regs[i].name, op->u.var_no);
+                    }
+                    else{
+                        regs[i].var = var;
+                        var->regNo = i;
+                        fprintf(fp, "lw %s, %d($fp)\n",regs[i].name, var->offset);
+                    }
                     return i;
                 }
             }
