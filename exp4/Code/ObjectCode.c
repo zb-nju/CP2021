@@ -23,6 +23,7 @@ void OCMain(InterCode head){
             break;
         }
         case ASSIGN_IR:{
+            OCAssign(head);
             break;
         }
         case ADD_IR: case SUB_IR: case MUL_IR: case DIV_IR:{
@@ -36,13 +37,15 @@ void OCMain(InterCode head){
             break;
         }
         case GOTO_IR:{
+            fprintf(fp, "j %s\n", head->u.signleop.op->u.value);
             break;
         }
         case RELOP_GOTO_IR:{
+            OCRelopGoto(head);
             break;
         }
         case RETURN_IR:{
-            fprintf(fp, "jr\n");
+            OCReturn(head);
             break;
         }
         case DEC_IR:{
@@ -58,9 +61,11 @@ void OCMain(InterCode head){
             break;
         }
         case READ_IR:{
+            OCRead(head);
             break;
         }
         case WRITE_IR:{
+            OCWrite(head);
             break;
         }
         default:
@@ -68,33 +73,11 @@ void OCMain(InterCode head){
         }
         head = head->next;
     }
-    
+
 }
 
-void OCHeader(){
-    fprintf(fp, ".data\n");
-    fprintf(fp, "_prompt: .asciiz \"Enter an integer:\"\n");
-    fprintf(fp, "_ret: .asciiz \"\\n\"\n");
-    fprintf(fp, ".globl main\n");
-    fprintf(fp, ".text\n");
-    fprintf(fp, "\n");
-    fprintf(fp, "read:\n");
-    fprintf(fp, "li $v0, 4\n");
-    fprintf(fp, "la $a0, _prompt\n");
-    fprintf(fp, "syscall\n");
-    fprintf(fp, "li $v0, 5\n");
-    fprintf(fp, "syscall\n");
-    fprintf(fp, "jr $ra\n");
+void OCAssign(InterCode head){
 
-    fprintf(fp, "\n");
-    fprintf(fp, "write:\n");
-    fprintf(fp, "li $v0, 1\n");
-    fprintf(fp, "syscall\n");
-    fprintf(fp, "li $v0, 4\n");
-    fprintf(fp, "la $a0, _ret\n");
-    fprintf(fp, "syscall\n");
-    fprintf(fp, "move $v0, $0\n");
-    fprintf(fp, "jr $ra\n");
 }
 
 void OCCal(InterCode head){
@@ -104,21 +87,67 @@ void OCCal(InterCode head){
     switch (head->kind)
     {
     case ADD_IR:
-        fprintf(fp, "add %s %s %s\n", regs[resReg].name, regs[op1Reg].name, regs[op2Reg].name);
+        fprintf(fp, "add %s, %s, %s\n", regs[resReg].name, regs[op1Reg].name, regs[op2Reg].name);
         break;
     case SUB_IR:
-        fprintf(fp, "sub %s %s %s\n", regs[resReg].name, regs[op1Reg].name, regs[op2Reg].name);
+        fprintf(fp, "sub %s, %s, %s\n", regs[resReg].name, regs[op1Reg].name, regs[op2Reg].name);
         break;
     case DIV_IR:
-        fprintf(fp, "div %s %s %s\n", regs[resReg].name, regs[op1Reg].name, regs[op2Reg].name);
+        fprintf(fp, "div %s, %s, %s\n", regs[resReg].name, regs[op1Reg].name, regs[op2Reg].name);
         break;
     case MUL_IR:
-        fprintf(fp, "mul %s %s %s\n", regs[resReg].name, regs[op1Reg].name, regs[op2Reg].name);
+        fprintf(fp, "mul %s, %s, %s\n", regs[resReg].name, regs[op1Reg].name, regs[op2Reg].name);
         break;
     default:
         break;
     }
     writeMemory();
+}
+
+void OCRelopGoto(InterCode head){
+    int xRegNo = getReg(head->u.if_goto.x);
+    int yRegNo = getReg(head->u.if_goto.y);
+    if(strcmp(head->u.if_goto.relop, "==") == 0){
+        fprintf(fp, "beq %s, %s, %s\n", regs[xRegNo].name, regs[yRegNo].name, head->u.if_goto.label_z->u.value);
+    }
+    else if(strcmp(head->u.if_goto.relop, "!=") == 0){
+        fprintf(fp, "bne %s, %s, %s\n", regs[xRegNo].name, regs[yRegNo].name, head->u.if_goto.label_z->u.value);
+    }
+    else if(strcmp(head->u.if_goto.relop, ">") == 0){
+        fprintf(fp, "bgt %s, %s, %s\n", regs[xRegNo].name, regs[yRegNo].name, head->u.if_goto.label_z->u.value);
+    }
+    else if(strcmp(head->u.if_goto.relop, "<") == 0){
+        fprintf(fp, "blt %s, %s, %s\n", regs[xRegNo].name, regs[yRegNo].name, head->u.if_goto.label_z->u.value);
+    }
+    else if(strcmp(head->u.if_goto.relop, ">=") == 0){
+        fprintf(fp, "bge %s, %s, %s\n", regs[xRegNo].name, regs[yRegNo].name, head->u.if_goto.label_z->u.value);
+    }
+    else if(strcmp(head->u.if_goto.relop, "<=") == 0){
+        fprintf(fp, "ble %s, %s, %s\n", regs[xRegNo].name, regs[yRegNo].name, head->u.if_goto.label_z->u.value);
+    }
+    freeRegs();
+}
+
+void OCReturn(InterCode head){
+    // 写入返回地址
+    fprintf(fp, "lw $ra, 4($fp)\n");
+    // 恢复栈指针
+    fprintf(fp, "addi $ra, $fp, 8\n");
+    // 恢复帧指针
+    fprintf(fp, "lw $fp, 0($fp)\n");
+
+    int regNo = loadReg(head->u.signleop.op);
+    fprintf(fp, "move $v0, %s\n", regs[regNo].name);
+    fprintf(fp, "jr $ra\n");
+    freeRegs();
+}
+
+void OCRead(InterCode head){
+
+}
+
+void OCWrite(InterCode head){
+
 }
 
 void initRegs(){
@@ -158,6 +187,32 @@ void initRegs(){
     strcpy(regs[29].name,"$sp");
     strcpy(regs[30].name,"$fp");
     strcpy(regs[31].name,"$ra");
+}
+
+void OCHeader(){
+    fprintf(fp, ".data\n");
+    fprintf(fp, "_prompt: .asciiz \"Enter an integer:\"\n");
+    fprintf(fp, "_ret: .asciiz \"\\n\"\n");
+    fprintf(fp, ".globl main\n");
+    fprintf(fp, ".text\n");
+    fprintf(fp, "\n");
+    fprintf(fp, "read:\n");
+    fprintf(fp, "li $v0, 4\n");
+    fprintf(fp, "la $a0, _prompt\n");
+    fprintf(fp, "syscall\n");
+    fprintf(fp, "li $v0, 5\n");
+    fprintf(fp, "syscall\n");
+    fprintf(fp, "jr $ra\n");
+
+    fprintf(fp, "\n");
+    fprintf(fp, "write:\n");
+    fprintf(fp, "li $v0, 1\n");
+    fprintf(fp, "syscall\n");
+    fprintf(fp, "li $v0, 4\n");
+    fprintf(fp, "la $a0, _ret\n");
+    fprintf(fp, "syscall\n");
+    fprintf(fp, "move $v0, $0\n");
+    fprintf(fp, "jr $ra\n");
 }
 
 void loadReg(Operand op){
@@ -205,6 +260,12 @@ Var getVar(Operand op){
 
 void writeMemory(int regNo){
     fprintf(fp, "sw %s, %d($fp)\n", regs[regNo].name, regs[regNo].node->offset);
+    freeRegs();
+}
+
+void freeRegs(){
+    for(int i = 8; i < 16; i++)
+        regs[i].free = 0;
 }
 
 void OCFunction(InterCode head){
