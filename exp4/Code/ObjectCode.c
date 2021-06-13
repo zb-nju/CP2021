@@ -150,6 +150,10 @@ void OCWrite(InterCode head){
 
 }
 
+void OCFunction(InterCode head){
+
+}
+
 void initRegs(){
     for(int i = 0; i < 32; i++){
         regs[i].free = 0;
@@ -266,8 +270,4 @@ void writeMemory(int regNo){
 void freeRegs(){
     for(int i = 8; i < 16; i++)
         regs[i].free = 0;
-}
-
-void OCFunction(InterCode head){
-
 }
