@@ -5,12 +5,17 @@
 #include<stdlib.h>
 #include<string.h>
 
+#define DEBUG
+
 extern FILE* fp;
 Register regs[32];
 Var varList;
 int func_offset;
 
 void OCMain(InterCode head){
+    #ifdef DEBUG
+        perror("OCMain");
+    #endif
     varList = NULL;
     initRegs();
     OCHeader();
@@ -33,12 +38,6 @@ void OCMain(InterCode head){
             OCCal(head);
             break;
         }
-        case GET_ADDR_IR:{
-            break;
-        }
-        case ASSIGN_ADDR_IR:{
-            break;
-        }
         case GOTO_IR:{
             fprintf(fp, "j %s\n", head->u.signleop.op->u.value);
             break;
@@ -54,7 +53,6 @@ void OCMain(InterCode head){
         case DEC_IR:{
             break;
         }
-        
         case ARG_IR: case CALL_IR: case READ_IR: {
             OCCall(head);
             while(head->kind != CALL_IR && head->kind != READ_IR)
@@ -78,6 +76,9 @@ void OCMain(InterCode head){
 }
 
 void OCAssign(InterCode head){
+    #ifdef DEBUG
+        perror("OCAssign");
+    #endif
     int rightReg = loadReg(head->u.assign.right);
     int leftReg = 8;
     if(head->u.assign.left->kind == VALUE_ADDR_OP){
@@ -93,7 +94,7 @@ void OCAssign(InterCode head){
         fprintf(fp, "lw %s, %d($fp)\n", regs[leftReg].name, leftVar->offset);
         fprintf(fp, "sw %s, 0(%s)\n", regs[rightReg].name, regs[leftReg].name);
     }else{
-        leftReg = loadReg(head->u.assign.right);
+        leftReg = loadReg(head->u.assign.left);
         fprintf(fp, "move %s, %s\n",  regs[leftReg].name, regs[rightReg].name);
         writeMemory(leftReg);
     }
@@ -101,6 +102,9 @@ void OCAssign(InterCode head){
 }
 
 void OCCal(InterCode head){
+    #ifdef DEBUG
+        perror("OCCal");
+    #endif
     int resReg = loadReg(head->u.binop.result);
     int op1Reg = loadReg(head->u.binop.op1);
     int op2Reg = loadReg(head->u.binop.op2);
@@ -125,6 +129,9 @@ void OCCal(InterCode head){
 }
 
 void OCRelopGoto(InterCode head){
+    #ifdef DEBUG
+        perror("OCRelopGoto");
+    #endif
     int xRegNo = loadReg(head->u.if_goto.x);
     int yRegNo = loadReg(head->u.if_goto.y);
     if(strcmp(head->u.if_goto.relop, "==") == 0){
@@ -149,6 +156,9 @@ void OCRelopGoto(InterCode head){
 }
 
 void OCReturn(InterCode head){
+    #ifdef DEBUG
+        perror("OCReturn");
+    #endif
     // 写入返回地址
     fprintf(fp, "lw $ra, 4($fp)\n");
     // 恢复栈指针
@@ -163,6 +173,9 @@ void OCReturn(InterCode head){
 }
 
 void OCCall(InterCode head){
+    #ifdef DEBUG
+        perror("OCCall");
+    #endif
     int offset = 0;
     while(head->kind == ARG_IR){
         offset += 4;
@@ -180,6 +193,9 @@ void OCCall(InterCode head){
 }
 
 void OCWrite(InterCode head){
+    #ifdef DEBUG
+        perror("OCWrite");
+    #endif
     int regNo = loadReg(head->u.signleop.op);
     fprintf(fp, "move $a0, %s\n", regs[regNo].name);
     fprintf(fp, "jal write\n");
@@ -187,6 +203,9 @@ void OCWrite(InterCode head){
 }
 
 void handle_val(Operand op){
+    #ifdef DEBUG
+        perror("handle_val");
+    #endif
     if(op->kind == CONSTANT_OP){
         return;
     }
@@ -202,6 +221,9 @@ void handle_val(Operand op){
 }
 
 void OCFunction(InterCode head){
+    #ifdef DEBUG
+        perror("OCFunction");
+    #endif
     fprintf(fp, "\n%s:\n", head->u.signleop.op->u.value);
     fprintf(fp, "addi $sp, $sp, -8\n");
     fprintf(fp, "sw $fp, 0($sp)\n");
@@ -272,6 +294,9 @@ void OCFunction(InterCode head){
 }
 
 void initRegs(){
+    #ifdef DEBUG
+        perror("initRegs");
+    #endif
     for(int i = 0; i < 32; i++){
         regs[i].free = 0;
         regs[i].var = NULL;
@@ -311,6 +336,9 @@ void initRegs(){
 }
 
 void OCHeader(){
+    #ifdef DEBUG
+        perror("OCHeader");
+    #endif
     fprintf(fp, ".data\n");
     fprintf(fp, "_prompt: .asciiz \"Enter an integer:\"\n");
     fprintf(fp, "_ret: .asciiz \"\\n\"\n");
@@ -337,6 +365,9 @@ void OCHeader(){
 }
 
 int loadReg(Operand op){
+    #ifdef DEBUG
+        perror("loadReg");
+    #endif
     for(int i = 8; i < 16; i++){
         if(regs[i].free == 0){
             regs[i].free = 1;
@@ -362,8 +393,11 @@ int loadReg(Operand op){
                     return i;
                 }
                 default:{
-                    perror("operand no solve");
-                    printf("value: %s    kind: %d\n", op->u.value ,op->kind);
+                    Var var = getVar(op);
+                    regs[i].var = var;
+                    var->regNo = i;
+                    fprintf(fp, "lw %s, %d($fp)\n",regs[i].name, var->offset);
+                    return i;
                 }
             }
         }
@@ -371,6 +405,9 @@ int loadReg(Operand op){
 }
 
 Var getVar(Operand op){
+    #ifdef DEBUG
+        perror("getVar");
+    #endif
     Var cur = varList;
     Var ans = NULL;
     while(cur != NULL){
@@ -385,11 +422,17 @@ Var getVar(Operand op){
 }
 
 void writeMemory(int regNo){
+    #ifdef DEBUG
+        perror("writeMemory");
+    #endif
     fprintf(fp, "sw %s, %d($fp)\n", regs[regNo].name, regs[regNo].var->offset);
     freeRegs();
 }
 
 void freeRegs(){
+    #ifdef DEBUG
+        perror("freeRegs");
+    #endif
     for(int i = 8; i < 16; i++)
         regs[i].free = 0;
 }

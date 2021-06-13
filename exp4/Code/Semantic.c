@@ -75,7 +75,6 @@ void Program(Node root){
     addRead();
     addWrite();
     ExtDefList(root->firstChild);
-
     // 判断是否有只声明无定义的函数
     for(int i=0; i<HASH_TABLE_SIZE; ++i){
         if(SymbolTable[i]!=NULL && SymbolTable[i]->type->kind == FUNCTION){
